@@ -1,5 +1,6 @@
 import inspect
 import traceback
+import builtins
 from collections import defaultdict
 
 
@@ -11,7 +12,7 @@ data DebugContext(
     source_lines: str[],
     extra_info: dict[str, str],
 ):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         ALL_DEBUG_CONTEXT[self.filename].append(self)
     @property
     def filename(self) = self.frame_info.filename
@@ -25,6 +26,12 @@ data DebugContext(
     def raw_source(self) = "\n".join(self.source_lines)
 
 
+def format_vars(vardict) = {
+    name: val for name, val in vardict.items()
+    if name not in vars(builtins)
+} |> repr
+
+
 def collect_stack_info(stack_level=1):
     cur_frame = inspect.currentframe()
     outer_frame = reduce(
@@ -34,21 +41,24 @@ def collect_stack_info(stack_level=1):
     )
 
     frame_info = inspect.getframeinfo(outer_frame)
-    source_lines, ==frame_info.lineno = inspect.getsourcelines(outer_frame)
+    try:
+        source_lines, ==frame_info.lineno = inspect.getsourcelines(outer_frame)
+    except OSError:
+        source_lines = []
 
     return DebugContext(
         frame_info=,
         source_lines=,
         extra_info={
-            "locals": repr(frame.f_locals),
-            "globals": repr(frame.f_globals),
+            "locals": format_vars(outer_frame.f_locals),
+            "globals": format_vars(outer_frame.f_globals),
         }
     )
 
 
 def collect_exc_info(exc_type, exc_val, exc_tb):
     source_lines, ==exc_tb.lineno = inspect.getsourcelines(exc_tb)
-    pretty_tb = traceback.format_exception(exc_type, exc_val, exc_tb) |> "\n.join"
+    pretty_tb = traceback.format_exception(exc_type, exc_val, exc_tb) |> "\n".join
 
     return DebugContext(
         frame_info=exc_tb,
