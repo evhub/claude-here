@@ -1,3 +1,7 @@
+.PHONY: test
+test: install
+	python -X dev ./test_file.py
+
 .PHONY: install
 install: build
 	python -m pip install -Ue .

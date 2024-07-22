@@ -1,0 +1,20 @@
+import sys
+
+from claude_here.debugger import collect_stack_info, collect_exc_info
+from claude_here.launcher import launch_claude
+
+
+def set_claude_here_breakpoint(on=True):
+    """Set breakpoint() to collect info and launch Claude."""
+    if on:
+        sys.breakpointhook = collect_stack_info ..> _ => launch_claude
+    else:
+        sys.breakpointhook = sys.__breakpointhook__
+
+
+def set_claude_here_excepthook(on=True):
+    """Configure uncaught exceptions to launch Claude."""
+    if on:
+        sys.excepthook = collect_exc_info ..> _ => launch_claude
+    else:
+        sys.excepthook = sys.__excepthook__

@@ -1,0 +1,82 @@
+from claude_here.debugger import ALL_DEBUG_CONTEXT
+
+
+# META PROMPT:
+# The task is for Claude to act as an assistant in debugging Python code. The application will automatically collect information about the currently running environment and send that to Claude to help debug upon encountering an exception or breakpoint. The information available is:
+# * The raw source code of the file(s) being debugged.
+# * A list of debug contexts, each containing information about a particular called breakpoint or caught exception. The contained information is: the filename, the function being called, the line on which the error occurred, and one of:
+#     - The traceback if it's from an exception.
+#     - The locals and globals if it's from a breakpoint.
+
+PREAMBLE = """You are a Claude, an AI assistant specialized in debugging Python code. Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
+
+Here's the information you'll be working with:"""
+
+POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or unhandled exceptions provided above. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
+
+1. Analyze the source code:
+   - Look for syntax errors, logical errors, or potential issues in the code structure.
+   - Pay attention to common Python pitfalls like indentation errors, missing colons, or incorrect function definitions.
+
+2. Examine the breakpoint contexts and/or unhandled exceptions provided:
+   - For each context, note the filename, function, and surrounding context where the issue occurred.
+   - If it's an exception, carefully review the traceback to understand the error type and message.
+   - If it's a breakpoint, analyze the local and global variables to identify any unexpected values or states.
+
+3. Identify the root cause:
+   - Cross-reference the provided context with the source code to pinpoint the exact location of the issue.
+   - Determine if the error is caused by the code itself or if it's related to external factors (e.g., missing dependencies, environment issues).
+
+4. Develop debugging suggestions:
+   - Propose clear and concise solutions to fix the identified issues.
+   - If applicable, suggest alternative approaches or best practices to improve the code.
+   - Provide explanations for your suggestions to help the user understand the reasoning behind them.
+   - If there is anything you're not sure you understand from the provided context, you can ask the user for more information, but you should still give your best attempt at debugging given only the context provided.
+
+5. Present your findings and suggestions:
+   - Summarize the identified issues and their locations in the code.
+   - List your debugging suggestions in a clear and organized manner.
+   - If relevant, include small code snippets to illustrate your suggestions.
+
+Format your response using Markdown. Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""
+
+
+case def assemble_prompt:
+    """Assemble a concrete prompt from the given structured prompt data."""
+    case(str(content)) = content
+    case(list(objs)) = objs |> map$(assemble_prompt) |> "\n\n".join
+    case((tag, content)) = f"<{tag}>\n{content}\n</{tag}>"
+    case(dict(tags)) = tags.items() |> list |> assemble_prompt
+
+
+def generate_prompt(all_debug_context):
+    """Generate a full prompt for Claude using the given debug context."""
+    prompt_cmpts = [PREAMBLE]
+
+    for filename, debug_contexts in all_debug_context.items():
+        file_prompt_cmpts = [
+            {"source_code": (
+                debug_contexts
+                |> map$(.source_lines)
+                |> filter$(ident)
+                |> .$[0]
+                |> "\n".join
+            )},
+        ]
+        for ctx in debug_contexts:
+            info_dict = {
+                "executing_function": ctx.function,
+                "surrounding_code": ctx.context_lines |> "\n".join,
+            }
+            info_dict |= ctx.extra_info
+            file_prompt_cmpts += [{ctx.name: info_dict}]
+        prompt_cmpts += [{filename: file_prompt_cmpts}]
+
+    prompt_cmpts += [POSTAMBLE]
+    return assemble_prompt(prompt_cmpts)
+
+
+
+def launch_claude():
+    """Launch claude.ai with all the collected debug context."""
+    print(generate_prompt(ALL_DEBUG_CONTEXT))

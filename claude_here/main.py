@@ -1,25 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0xb1148e9e
+# __coconut_hash__ = 0xff6d06cb
 
 # Compiled with Coconut version 3.1.1-post_dev2
-
-"""
-Debug Python with claude.ai.
-Copyright (c) 2024 Evan Hubinger
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use these files except in compliance with the License.
-You may obtain a copy of the License at:
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
 
 # Coconut Header: -------------------------------------------------------------
 
@@ -72,10 +55,25 @@ else:
 
 # Compiled Coconut: -----------------------------------------------------------
 
+import sys  #1 (line in Coconut source)
+
+from claude_here.debugger import collect_stack_info  #3 (line in Coconut source)
+from claude_here.debugger import collect_exc_info  #3 (line in Coconut source)
+from claude_here.launcher import launch_claude  #4 (line in Coconut source)
 
 
-from claude_here.main import set_claude_here_breakpoint  #18 (line in Coconut source)
-from claude_here.main import set_claude_here_excepthook  #18 (line in Coconut source)
+def set_claude_here_breakpoint(on=True):  #7 (line in Coconut source)
+    """Set breakpoint() to collect info and launch Claude."""  #8 (line in Coconut source)
+    if on:  #9 (line in Coconut source)
+        sys.breakpointhook = _coconut_base_compose(collect_stack_info, (lambda _: launch_claude, 0, False))  #10 (line in Coconut source)
+    else:  #11 (line in Coconut source)
+        sys.breakpointhook = sys.__breakpointhook__  #12 (line in Coconut source)
 
-set_claude_here_breakpoint()  #20 (line in Coconut source)
-set_claude_here_excepthook()  #21 (line in Coconut source)
+
+
+def set_claude_here_excepthook(on=True):  #15 (line in Coconut source)
+    """Configure uncaught exceptions to launch Claude."""  #16 (line in Coconut source)
+    if on:  #17 (line in Coconut source)
+        sys.excepthook = _coconut_base_compose(collect_exc_info, (lambda _: launch_claude, 0, False))  #18 (line in Coconut source)
+    else:  #19 (line in Coconut source)
+        sys.excepthook = sys.__excepthook__  #20 (line in Coconut source)

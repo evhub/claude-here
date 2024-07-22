@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0x5fef51ff
+# __coconut_hash__ = 0xdd29718f
 
 # Compiled with Coconut version 3.1.1-post_dev2
 
@@ -74,91 +74,73 @@ from collections import defaultdict  #4 (line in Coconut source)
 ALL_DEBUG_CONTEXT = defaultdict(list)  #7 (line in Coconut source)
 
 
-class DebugContext(_coconut.typing.NamedTuple("DebugContext", [("frame_info", '_coconut.typing.Any'), ("source_lines", '_coconut.typing.Sequence[str]'), ("extra_info", 'dict[str, str]')]), _coconut.object):  #10 (line in Coconut source)
-    __slots__ = ()  #10 (line in Coconut source)
-    _coconut_is_data = True  #10 (line in Coconut source)
-    __match_args__ = ('frame_info', 'source_lines', 'extra_info')  #10 (line in Coconut source)
-    def __add__(self, other): return _coconut.NotImplemented  #10 (line in Coconut source)
-    def __mul__(self, other): return _coconut.NotImplemented  #10 (line in Coconut source)
-    def __rmul__(self, other): return _coconut.NotImplemented  #10 (line in Coconut source)
-    __ne__ = _coconut.object.__ne__  #10 (line in Coconut source)
-    def __eq__(self, other):  #10 (line in Coconut source)
-        return self.__class__ is other.__class__ and _coconut.tuple.__eq__(self, other)  #10 (line in Coconut source)
-    def __hash__(self):  #10 (line in Coconut source)
-        return _coconut.tuple.__hash__(self) ^ _coconut.hash(self.__class__)  #10 (line in Coconut source)
-    def __init__(self, *args, **kwargs):  #15 (line in Coconut source)
-        ALL_DEBUG_CONTEXT[self.filename].append(self)  #16 (line in Coconut source)
-
-    @property  #17 (line in Coconut source)
-    def filename(self):  #18 (line in Coconut source)
-        return self.frame_info.filename  #18 (line in Coconut source)
+class DebugContext(_coconut.typing.NamedTuple("DebugContext", [("name", 'str'), ("frame_info", '_coconut.typing.Any'), ("source_lines", '_coconut.typing.Sequence[str]'), ("extra_info", 'dict[str, str]')]), _coconut.object):  #10 (line in Coconut source)
+    """Collection of information gathered about a debug event."""  #16 (line in Coconut source)
+    __slots__ = ()  #17 (line in Coconut source)
+    _coconut_is_data = True  #17 (line in Coconut source)
+    __match_args__ = ('name', 'frame_info', 'source_lines', 'extra_info')  #17 (line in Coconut source)
+    def __add__(self, other): return _coconut.NotImplemented  #17 (line in Coconut source)
+    def __mul__(self, other): return _coconut.NotImplemented  #17 (line in Coconut source)
+    def __rmul__(self, other): return _coconut.NotImplemented  #17 (line in Coconut source)
+    __ne__ = _coconut.object.__ne__  #17 (line in Coconut source)
+    def __eq__(self, other):  #17 (line in Coconut source)
+        return self.__class__ is other.__class__ and _coconut.tuple.__eq__(self, other)  #17 (line in Coconut source)
+    def __hash__(self):  #17 (line in Coconut source)
+        return _coconut.tuple.__hash__(self) ^ _coconut.hash(self.__class__)  #17 (line in Coconut source)
+    def __init__(self, *args, **kwargs):  #17 (line in Coconut source)
+        ALL_DEBUG_CONTEXT[self.filename].append(self)  #18 (line in Coconut source)
 
     @property  #19 (line in Coconut source)
-    def lineno(self):  #20 (line in Coconut source)
-        return self.frame_info.lineno  #20 (line in Coconut source)
+    def filename(self):  #20 (line in Coconut source)
+        return self.frame_info.filename  #20 (line in Coconut source)
 
     @property  #21 (line in Coconut source)
-    def function(self):  #22 (line in Coconut source)
-        return self.frame_info.function  #22 (line in Coconut source)
+    def lineno(self):  #22 (line in Coconut source)
+        return self.frame_info.lineno  #22 (line in Coconut source)
 
     @property  #23 (line in Coconut source)
-    def context(self):  #24 (line in Coconut source)
-        return self.frame_info.code_context, self.frame_info.index  #24 (line in Coconut source)
+    def function(self):  #24 (line in Coconut source)
+        return self.frame_info.function  #24 (line in Coconut source)
 
     @property  #25 (line in Coconut source)
-    def raw_source(self):  #26 (line in Coconut source)
-        return "\n".join(self.source_lines)  #26 (line in Coconut source)
+    def context_lines(self):  #26 (line in Coconut source)
+        return self.frame_info.code_context  #26 (line in Coconut source)
+
+    @property  #27 (line in Coconut source)
+    def context_index(self):  #28 (line in Coconut source)
+        return self.frame_info.index  #28 (line in Coconut source)
+
+    @property  #29 (line in Coconut source)
+    def raw_source(self):  #30 (line in Coconut source)
+        return "\n".join(self.source_lines)  #30 (line in Coconut source)
 
 
 
-_coconut_call_set_names(DebugContext)  #29 (line in Coconut source)
-def format_vars(vardict):  #29 (line in Coconut source)
-    return (repr)(_coconut.dict(((name), (val)) for name, val in vardict.items() if name not in vars(builtins)))  #29 (line in Coconut source)
+_coconut_call_set_names(DebugContext)  #33 (line in Coconut source)
+def format_vars(vardict):  #33 (line in Coconut source)
+    return (repr)(_coconut.dict(((name), (val)) for name, val in vardict.items() if name not in vars(builtins)))  #33 (line in Coconut source)
 
 
 
-def collect_stack_info(stack_level=1):  #35 (line in Coconut source)
-    cur_frame = inspect.currentframe()  #36 (line in Coconut source)
-    outer_frame = reduce(lambda frame, _: frame.f_back, range(stack_level), cur_frame)  #37 (line in Coconut source)
+def collect_stack_info(stack_level=1):  #39 (line in Coconut source)
+    """Collect information about the callee site for sending to Claude."""  #40 (line in Coconut source)
+    cur_frame = inspect.currentframe()  #41 (line in Coconut source)
+    outer_frame = reduce(lambda frame, _: frame.f_back, range(stack_level), cur_frame)  #42 (line in Coconut source)
 
-    frame_info = inspect.getframeinfo(outer_frame)  #43 (line in Coconut source)
-    try:  #44 (line in Coconut source)
-        _coconut_match_to_0 = inspect.getsourcelines(outer_frame)  #45 (line in Coconut source)
-        _coconut_match_check_0 = False  #45 (line in Coconut source)
-        _coconut_match_set_name_source_lines = _coconut_sentinel  #45 (line in Coconut source)
-        if _coconut.isinstance(_coconut_match_to_0, _coconut.abc.Iterable):  #45 (line in Coconut source)
-            _coconut_match_temp_1 = _coconut.tuple(_coconut_match_to_0)  #45 (line in Coconut source)
-            if (_coconut.len(_coconut_match_temp_1) == 2) and (_coconut_match_temp_1[1] == frame_info.lineno):  #45 (line in Coconut source)
-                _coconut_match_set_name_source_lines = _coconut_match_temp_1[0]  #45 (line in Coconut source)
-                _coconut_match_check_0 = True  #45 (line in Coconut source)
-        if _coconut_match_check_0:  #45 (line in Coconut source)
-            if _coconut_match_set_name_source_lines is not _coconut_sentinel:  #45 (line in Coconut source)
-                source_lines = _coconut_match_set_name_source_lines  #45 (line in Coconut source)
-        if not _coconut_match_check_0:  #45 (line in Coconut source)
-            raise _coconut_MatchError('source_lines, ==frame_info.lineno = inspect.getsourcelines(outer_frame)', _coconut_match_to_0)  #45 (line in Coconut source)
+    frame_info = inspect.getframeinfo(outer_frame)  #48 (line in Coconut source)
+    try:  #49 (line in Coconut source)
+        source_lines, source_lineno = inspect.getsourcelines(outer_frame)  #50 (line in Coconut source)
+    except OSError:  #51 (line in Coconut source)
+        source_lines = []  #52 (line in Coconut source)
 
-    except OSError:  #46 (line in Coconut source)
-        source_lines = []  #47 (line in Coconut source)
-
-    return DebugContext(frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("locals", format_vars(outer_frame.f_locals)), ("globals", format_vars(outer_frame.f_globals)))))  #49 (line in Coconut source)
+    return DebugContext(name="breakpoint", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("locals", format_vars(outer_frame.f_locals)), ("globals", format_vars(outer_frame.f_globals)))))  #54 (line in Coconut source)
 
 
 
-def collect_exc_info(exc_type, exc_val, exc_tb):  #59 (line in Coconut source)
-    _coconut_match_to_1 = inspect.getsourcelines(exc_tb)  #60 (line in Coconut source)
-    _coconut_match_check_1 = False  #60 (line in Coconut source)
-    _coconut_match_set_name_source_lines = _coconut_sentinel  #60 (line in Coconut source)
-    if _coconut.isinstance(_coconut_match_to_1, _coconut.abc.Iterable):  #60 (line in Coconut source)
-        _coconut_match_temp_3 = _coconut.tuple(_coconut_match_to_1)  #60 (line in Coconut source)
-        if (_coconut.len(_coconut_match_temp_3) == 2) and (_coconut_match_temp_3[1] == exc_tb.lineno):  #60 (line in Coconut source)
-            _coconut_match_set_name_source_lines = _coconut_match_temp_3[0]  #60 (line in Coconut source)
-            _coconut_match_check_1 = True  #60 (line in Coconut source)
-    if _coconut_match_check_1:  #60 (line in Coconut source)
-        if _coconut_match_set_name_source_lines is not _coconut_sentinel:  #60 (line in Coconut source)
-            source_lines = _coconut_match_set_name_source_lines  #60 (line in Coconut source)
-    if not _coconut_match_check_1:  #60 (line in Coconut source)
-        raise _coconut_MatchError('source_lines, ==exc_tb.lineno = inspect.getsourcelines(exc_tb)', _coconut_match_to_1)  #60 (line in Coconut source)
+def collect_exc_info(exc_type, exc_val, exc_tb):  #65 (line in Coconut source)
+    """Collect information about the given exception for sending to Claude."""  #66 (line in Coconut source)
+    frame_info = inspect.getframeinfo(exc_tb.tb_frame)  #67 (line in Coconut source)
+    source_lines, source_lineno = inspect.getsourcelines(exc_tb)  #68 (line in Coconut source)
+    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, exc_tb))  #69 (line in Coconut source)
 
-    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, exc_tb))  #61 (line in Coconut source)
-
-    return DebugContext(frame_info=exc_tb, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #63 (line in Coconut source)
+    return DebugContext(name="exception", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #71 (line in Coconut source)

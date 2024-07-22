@@ -8,10 +8,12 @@ ALL_DEBUG_CONTEXT = defaultdict(list)
 
 
 data DebugContext(
+    name: str,
     frame_info,
     source_lines: str[],
     extra_info: dict[str, str],
 ):
+    """Collection of information gathered about a debug event."""
     def __init__(self, *args, **kwargs):
         ALL_DEBUG_CONTEXT[self.filename].append(self)
     @property
@@ -21,7 +23,9 @@ data DebugContext(
     @property
     def function(self) = self.frame_info.function
     @property
-    def context(self) = self.frame_info.code_context, self.frame_info.index
+    def context_lines(self) = self.frame_info.code_context
+    @property
+    def context_index(self) = self.frame_info.index
     @property
     def raw_source(self) = "\n".join(self.source_lines)
 
@@ -33,6 +37,7 @@ def format_vars(vardict) = {
 
 
 def collect_stack_info(stack_level=1):
+    """Collect information about the callee site for sending to Claude."""
     cur_frame = inspect.currentframe()
     outer_frame = reduce(
         (frame, _) => frame.f_back,
@@ -42,11 +47,12 @@ def collect_stack_info(stack_level=1):
 
     frame_info = inspect.getframeinfo(outer_frame)
     try:
-        source_lines, ==frame_info.lineno = inspect.getsourcelines(outer_frame)
+        source_lines, source_lineno = inspect.getsourcelines(outer_frame)
     except OSError:
         source_lines = []
 
     return DebugContext(
+        name="breakpoint",
         frame_info=,
         source_lines=,
         extra_info={
@@ -57,11 +63,14 @@ def collect_stack_info(stack_level=1):
 
 
 def collect_exc_info(exc_type, exc_val, exc_tb):
-    source_lines, ==exc_tb.lineno = inspect.getsourcelines(exc_tb)
+    """Collect information about the given exception for sending to Claude."""
+    frame_info = inspect.getframeinfo(exc_tb.tb_frame)
+    source_lines, source_lineno = inspect.getsourcelines(exc_tb)
     pretty_tb = traceback.format_exception(exc_type, exc_val, exc_tb) |> "\n".join
 
     return DebugContext(
-        frame_info=exc_tb,
+        name="exception",
+        frame_info=frame_info,
         source_lines=,
         extra_info={
             "traceback": pretty_tb,
