@@ -32,7 +32,7 @@ package:
 
 .PHONY: upload
 upload: install package
-	twine upload dist/*
+	python -m twine upload dist/*
 
 .PHONY: clean
 clean:
