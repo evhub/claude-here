@@ -1,6 +1,7 @@
 .PHONY: test
+test: export CLAUDE_HERE_DRY_RUN=TRUE
 test: install
-	python -X dev ./test_file.py
+	python ./claude_here/test_files/fib_test.py
 
 .PHONY: install
 install: build

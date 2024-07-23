@@ -27,7 +27,9 @@ data DebugContext(
     @property
     def context_index(self) = self.frame_info.index
     @property
-    def raw_source(self) = "\n".join(self.source_lines)
+    def raw_context(self) = "".join(self.context_lines)
+    @property
+    def raw_source(self) = "".join(self.source_lines)
 
 
 IGNORED_VARS = set(dir(builtins)) | {"claude_here"}

@@ -76,21 +76,21 @@ def generate_prompt(all_debug_context, max_context_items):
     prompt_cmpts = [PREAMBLE]
 
     for filepath, debug_contexts in all_debug_context.items():
+        coconut_filepath = os.path.splitext(filepath)[0] + ".coco"
+        if os.path.exists(coconut_filepath):
+            filepath = coconut_filepath
+
+        with open(filepath, "r") as fobj:
+            source_code = fobj.read()
         filename = os.path.basename(filepath)
         file_prompt_cmpts = [
-            {"source_code": (
-                debug_contexts
-                |> map$(.source_lines)
-                |> filter$(ident)
-                |> .$[0]
-                |> "".join
-                |> Markdown
-            )},
+            {"source_code": Markdown(source_code)},
         ]
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {
+                "surrounding_code": ctx.raw_source |> Markdown,
                 "executing_function": ctx.function,
-                "executing_code": ctx.context_lines |> "".join |> Markdown,
+                "executing_line": ctx.raw_context |> Markdown,
                 "line_number": ctx.lineno |> str,
             }
             info_dict |= ctx.extra_info
@@ -114,11 +114,12 @@ def get_bool_env_var(env_var, default=None):
         return default
 
 
-def launch_claude(max_context_items, debug=None):
+def launch_claude(max_context_items, dry_run=None):
     """Launch claude.ai with all the collected debug context."""
-    debug ??= get_bool_env_var("CLAUDE_HERE_DEBUG", False)
+    dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
     prompt = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
-    if debug:
+    if dry_run:
         print(prompt)
-    encoded_prompt = urllib.parse.quote_plus(prompt)
-    webbrowser.open(f"https://claude.ai/new?q={encoded_prompt}")
+    else:
+        encoded_prompt = urllib.parse.quote_plus(prompt)
+        webbrowser.open(f"https://claude.ai/new?q={encoded_prompt}")
