@@ -4,14 +4,15 @@ from claude_here.debugger import collect_stack_info, collect_exc_info
 from claude_here.launcher import launch_claude
 
 
-DEFAULT_MAX_CONTEXT_ITEMS = 5
+DEFAULT_MAX_CONTEXT_ITEMS = 10
 
 
-def breakpointhook(launch=True, max_context_items=DEFAULT_MAX_CONTEXT_ITEMS):
+def breakpointhook(just_gather_info=False, max_context_items=DEFAULT_MAX_CONTEXT_ITEMS):
     """Claude breakpoint handler."""
     collect_stack_info(stack_level=2)
-    if launch:
+    if not just_gather_info:
         launch_claude(max_context_items=)
+        input("Press Enter when you're done talking with Claude to continue to the next breakpoint.")
 
 
 EXTRA_RECURSION_LIMIT = 100

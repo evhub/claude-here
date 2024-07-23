@@ -99,7 +99,11 @@ def collect_exc_info(exc_type, exc_val, exc_tb):
 
     frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
     source_lines, source_lineno = inspect.getsourcelines(filtered_tb)
-    pretty_tb = traceback.format_exception(exc_type, exc_val, filtered_tb) |> "\n".join
+    pretty_tb = (
+        traceback.format_exception(exc_type, exc_val, filtered_tb)
+        |> "".join
+        |> .rstrip()
+    )
 
     return DebugContext(
         name="exception",
