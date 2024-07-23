@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0xba925c04
+# __coconut_hash__ = 0x82db63c1
 
 # Compiled with Coconut version 3.1.1-post_dev2
 
@@ -55,7 +55,11 @@ else:
 
 # Compiled Coconut: -----------------------------------------------------------
 
-from claude_here.debugger import ALL_DEBUG_CONTEXT  #1 (line in Coconut source)
+import os  #1 (line in Coconut source)
+import urllib  #2 (line in Coconut source)
+import webbrowser  #3 (line in Coconut source)
+
+from claude_here.debugger import ALL_DEBUG_CONTEXT  #5 (line in Coconut source)
 
 
 # META PROMPT:
@@ -65,18 +69,18 @@ from claude_here.debugger import ALL_DEBUG_CONTEXT  #1 (line in Coconut source)
 #     - The traceback if it's from an exception.
 #     - The locals and globals if it's from a breakpoint.
 
-PREAMBLE = """You are a Claude, an AI assistant specialized in debugging Python code. Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
+PREAMBLE = """Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
 
-Here's the information you'll be working with:"""  #13 (line in Coconut source)
+Here's the information you'll be working with:"""  #17 (line in Coconut source)
 
 POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or unhandled exceptions provided above. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
 
 1. Analyze the source code:
    - Look for syntax errors, logical errors, or potential issues in the code structure.
-   - Pay attention to common Python pitfalls like indentation errors, missing colons, or incorrect function definitions.
+   - Pay attention to common Python pitfalls.
 
 2. Examine the breakpoint contexts and/or unhandled exceptions provided:
-   - For each context, note the filename, function, and surrounding context where the issue occurred.
+   - For each context, note the filename, function, and code context where the error occurred or breakpoint was reached.
    - If it's an exception, carefully review the traceback to understand the error type and message.
    - If it's a breakpoint, analyze the local and global variables to identify any unexpected values or states.
 
@@ -85,7 +89,7 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
    - Determine if the error is caused by the code itself or if it's related to external factors (e.g., missing dependencies, environment issues).
 
 4. Develop debugging suggestions:
-   - Propose clear and concise solutions to fix the identified issues.
+   - Propose clear and concise solutions to fix any identified issues.
    - If applicable, suggest alternative approaches or best practices to improve the code.
    - Provide explanations for your suggestions to help the user understand the reasoning behind them.
    - If there is anything you're not sure you understand from the provided context, you can ask the user for more information, but you should still give your best attempt at debugging given only the context provided.
@@ -94,236 +98,239 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
    - Summarize the identified issues and their locations in the code.
    - List your debugging suggestions in a clear and organized manner.
    - If relevant, include small code snippets to illustrate your suggestions.
+   - Format your response using Markdown.
 
-Format your response using Markdown. Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""  #41 (line in Coconut source)
-
-
-@_coconut_mark_as_match  #44 (line in Coconut source)
-def assemble_prompt(_coconut_match_first_arg=_coconut_sentinel, *_coconut_match_args, **_coconut_match_kwargs):  #44 (line in Coconut source)
-    """Assemble a concrete prompt from the given structured prompt data."""  #45 (line in Coconut source)
-
-    _coconut_match_check_0 = False  #46 (line in Coconut source)
-    _coconut_FunctionMatchError = _coconut_get_function_match_error()  #46 (line in Coconut source)
-    if _coconut_match_first_arg is not _coconut_sentinel:  #46 (line in Coconut source)
-        _coconut_match_args = (_coconut_match_first_arg,) + _coconut_match_args  #46 (line in Coconut source)
-    _coconut_match_kwargs_store = _coconut_match_kwargs  #46 (line in Coconut source)
-    if not _coconut_match_check_0:  #46 (line in Coconut source)
-        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #46 (line in Coconut source)
-        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "content" in _coconut_match_kwargs)) == 1):  #46 (line in Coconut source)
-            _coconut_match_temp_0 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("content")  #46 (line in Coconut source)
-            _coconut_match_temp_1 = _coconut.getattr(str, "_coconut_is_data", False) or _coconut.isinstance(str, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in str)  # type: ignore  #46 (line in Coconut source)
-            if not _coconut_match_kwargs:  #46 (line in Coconut source)
-                _coconut_match_check_0 = True  #46 (line in Coconut source)
-        if _coconut_match_check_0:  #46 (line in Coconut source)
-            _coconut_match_check_0 = False  #46 (line in Coconut source)
-            if not _coconut_match_check_0:  #46 (line in Coconut source)
-                _coconut_match_set_name_content = _coconut_sentinel  #46 (line in Coconut source)
-                if (_coconut_match_temp_1) and (_coconut.isinstance(_coconut_match_temp_0, str)) and (_coconut.len(_coconut_match_temp_0) >= 1):  #46 (line in Coconut source)
-                    _coconut_match_set_name_content = _coconut_match_temp_0[0]  #46 (line in Coconut source)
-                    _coconut_match_temp_2 = _coconut.len(_coconut_match_temp_0) <= _coconut.max(1, _coconut.len(_coconut_match_temp_0.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_0, "_coconut_data_defaults", {}) and _coconut_match_temp_0[i] == _coconut.getattr(_coconut_match_temp_0, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_0.__match_args__))) if _coconut.hasattr(_coconut_match_temp_0, "__match_args__") else _coconut.len(_coconut_match_temp_0) == 1  # type: ignore  #46 (line in Coconut source)
-                    if _coconut_match_temp_2:  #46 (line in Coconut source)
-                        _coconut_match_check_0 = True  #46 (line in Coconut source)
-                if _coconut_match_check_0:  #46 (line in Coconut source)
-                    if _coconut_match_set_name_content is not _coconut_sentinel:  #46 (line in Coconut source)
-                        content = _coconut_match_set_name_content  #46 (line in Coconut source)
-
-            if not _coconut_match_check_0:  #46 (line in Coconut source)
-                if (not _coconut_match_temp_1) and (_coconut.isinstance(_coconut_match_temp_0, str)):  #46 (line in Coconut source)
-                    _coconut_match_check_0 = True  #46 (line in Coconut source)
-                if _coconut_match_check_0:  #46 (line in Coconut source)
-                    _coconut_match_check_0 = False  #46 (line in Coconut source)
-                    if not _coconut_match_check_0:  #46 (line in Coconut source)
-                        _coconut_match_set_name_content = _coconut_sentinel  #46 (line in Coconut source)
-                        if _coconut.type(_coconut_match_temp_0) in _coconut_self_match_types:  #46 (line in Coconut source)
-                            _coconut_match_set_name_content = _coconut_match_temp_0  #46 (line in Coconut source)
-                            _coconut_match_check_0 = True  #46 (line in Coconut source)
-                        if _coconut_match_check_0:  #46 (line in Coconut source)
-                            if _coconut_match_set_name_content is not _coconut_sentinel:  #46 (line in Coconut source)
-                                content = _coconut_match_set_name_content  #46 (line in Coconut source)
-
-                    if not _coconut_match_check_0:  #46 (line in Coconut source)
-                        _coconut_match_set_name_content = _coconut_sentinel  #46 (line in Coconut source)
-                        if not _coconut.type(_coconut_match_temp_0) in _coconut_self_match_types:  #46 (line in Coconut source)
-                            _coconut_match_temp_3 = _coconut.getattr(str, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #46 (line in Coconut source)
-                            if not _coconut.isinstance(_coconut_match_temp_3, _coconut.tuple):  #46 (line in Coconut source)
-                                raise _coconut.TypeError("str.__match_args__ must be a tuple")  #46 (line in Coconut source)
-                            if _coconut.len(_coconut_match_temp_3) < 1:  #46 (line in Coconut source)
-                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'str' only supports %s)" % (_coconut.len(_coconut_match_temp_3),))  #46 (line in Coconut source)
-                            _coconut_match_temp_4 = _coconut.getattr(_coconut_match_temp_0, _coconut_match_temp_3[0], _coconut_sentinel)  #46 (line in Coconut source)
-                            if _coconut_match_temp_4 is not _coconut_sentinel:  #46 (line in Coconut source)
-                                _coconut_match_set_name_content = _coconut_match_temp_4  #46 (line in Coconut source)
-                                _coconut_match_check_0 = True  #46 (line in Coconut source)
-                        if _coconut_match_check_0:  #46 (line in Coconut source)
-                            if _coconut_match_set_name_content is not _coconut_sentinel:  #46 (line in Coconut source)
-                                content = _coconut_match_set_name_content  #46 (line in Coconut source)
+Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""  #46 (line in Coconut source)
 
 
+@_coconut_mark_as_match  #49 (line in Coconut source)
+def assemble_prompt(_coconut_match_first_arg=_coconut_sentinel, *_coconut_match_args, **_coconut_match_kwargs):  #49 (line in Coconut source)
+    """Assemble a concrete prompt from the given structured prompt data."""  #50 (line in Coconut source)
 
+    _coconut_match_check_0 = False  #51 (line in Coconut source)
+    _coconut_FunctionMatchError = _coconut_get_function_match_error()  #51 (line in Coconut source)
+    if _coconut_match_first_arg is not _coconut_sentinel:  #51 (line in Coconut source)
+        _coconut_match_args = (_coconut_match_first_arg,) + _coconut_match_args  #51 (line in Coconut source)
+    _coconut_match_kwargs_store = _coconut_match_kwargs  #51 (line in Coconut source)
+    if not _coconut_match_check_0:  #51 (line in Coconut source)
+        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #51 (line in Coconut source)
+        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "content" in _coconut_match_kwargs)) == 1):  #51 (line in Coconut source)
+            _coconut_match_temp_0 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("content")  #51 (line in Coconut source)
+            _coconut_match_temp_1 = _coconut.getattr(str, "_coconut_is_data", False) or _coconut.isinstance(str, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in str)  # type: ignore  #51 (line in Coconut source)
+            if not _coconut_match_kwargs:  #51 (line in Coconut source)
+                _coconut_match_check_0 = True  #51 (line in Coconut source)
+        if _coconut_match_check_0:  #51 (line in Coconut source)
+            _coconut_match_check_0 = False  #51 (line in Coconut source)
+            if not _coconut_match_check_0:  #51 (line in Coconut source)
+                _coconut_match_set_name_content = _coconut_sentinel  #51 (line in Coconut source)
+                if (_coconut_match_temp_1) and (_coconut.isinstance(_coconut_match_temp_0, str)) and (_coconut.len(_coconut_match_temp_0) >= 1):  #51 (line in Coconut source)
+                    _coconut_match_set_name_content = _coconut_match_temp_0[0]  #51 (line in Coconut source)
+                    _coconut_match_temp_2 = _coconut.len(_coconut_match_temp_0) <= _coconut.max(1, _coconut.len(_coconut_match_temp_0.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_0, "_coconut_data_defaults", {}) and _coconut_match_temp_0[i] == _coconut.getattr(_coconut_match_temp_0, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_0.__match_args__))) if _coconut.hasattr(_coconut_match_temp_0, "__match_args__") else _coconut.len(_coconut_match_temp_0) == 1  # type: ignore  #51 (line in Coconut source)
+                    if _coconut_match_temp_2:  #51 (line in Coconut source)
+                        _coconut_match_check_0 = True  #51 (line in Coconut source)
+                if _coconut_match_check_0:  #51 (line in Coconut source)
+                    if _coconut_match_set_name_content is not _coconut_sentinel:  #51 (line in Coconut source)
+                        content = _coconut_match_set_name_content  #51 (line in Coconut source)
 
+            if not _coconut_match_check_0:  #51 (line in Coconut source)
+                if (not _coconut_match_temp_1) and (_coconut.isinstance(_coconut_match_temp_0, str)):  #51 (line in Coconut source)
+                    _coconut_match_check_0 = True  #51 (line in Coconut source)
+                if _coconut_match_check_0:  #51 (line in Coconut source)
+                    _coconut_match_check_0 = False  #51 (line in Coconut source)
+                    if not _coconut_match_check_0:  #51 (line in Coconut source)
+                        _coconut_match_set_name_content = _coconut_sentinel  #51 (line in Coconut source)
+                        if _coconut.type(_coconut_match_temp_0) in _coconut_self_match_types:  #51 (line in Coconut source)
+                            _coconut_match_set_name_content = _coconut_match_temp_0  #51 (line in Coconut source)
+                            _coconut_match_check_0 = True  #51 (line in Coconut source)
+                        if _coconut_match_check_0:  #51 (line in Coconut source)
+                            if _coconut_match_set_name_content is not _coconut_sentinel:  #51 (line in Coconut source)
+                                content = _coconut_match_set_name_content  #51 (line in Coconut source)
 
-        if _coconut_match_check_0:  #46 (line in Coconut source)
-
-                return content  #46 (line in Coconut source)
-
-    if not _coconut_match_check_0:  #47 (line in Coconut source)
-        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #47 (line in Coconut source)
-        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "objs" in _coconut_match_kwargs)) == 1):  #47 (line in Coconut source)
-            _coconut_match_temp_5 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("objs")  #47 (line in Coconut source)
-            _coconut_match_temp_6 = _coconut.getattr(list, "_coconut_is_data", False) or _coconut.isinstance(list, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in list)  # type: ignore  #47 (line in Coconut source)
-            if not _coconut_match_kwargs:  #47 (line in Coconut source)
-                _coconut_match_check_0 = True  #47 (line in Coconut source)
-        if _coconut_match_check_0:  #47 (line in Coconut source)
-            _coconut_match_check_0 = False  #47 (line in Coconut source)
-            if not _coconut_match_check_0:  #47 (line in Coconut source)
-                _coconut_match_set_name_objs = _coconut_sentinel  #47 (line in Coconut source)
-                if (_coconut_match_temp_6) and (_coconut.isinstance(_coconut_match_temp_5, list)) and (_coconut.len(_coconut_match_temp_5) >= 1):  #47 (line in Coconut source)
-                    _coconut_match_set_name_objs = _coconut_match_temp_5[0]  #47 (line in Coconut source)
-                    _coconut_match_temp_7 = _coconut.len(_coconut_match_temp_5) <= _coconut.max(1, _coconut.len(_coconut_match_temp_5.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_5, "_coconut_data_defaults", {}) and _coconut_match_temp_5[i] == _coconut.getattr(_coconut_match_temp_5, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_5.__match_args__))) if _coconut.hasattr(_coconut_match_temp_5, "__match_args__") else _coconut.len(_coconut_match_temp_5) == 1  # type: ignore  #47 (line in Coconut source)
-                    if _coconut_match_temp_7:  #47 (line in Coconut source)
-                        _coconut_match_check_0 = True  #47 (line in Coconut source)
-                if _coconut_match_check_0:  #47 (line in Coconut source)
-                    if _coconut_match_set_name_objs is not _coconut_sentinel:  #47 (line in Coconut source)
-                        objs = _coconut_match_set_name_objs  #47 (line in Coconut source)
-
-            if not _coconut_match_check_0:  #47 (line in Coconut source)
-                if (not _coconut_match_temp_6) and (_coconut.isinstance(_coconut_match_temp_5, list)):  #47 (line in Coconut source)
-                    _coconut_match_check_0 = True  #47 (line in Coconut source)
-                if _coconut_match_check_0:  #47 (line in Coconut source)
-                    _coconut_match_check_0 = False  #47 (line in Coconut source)
-                    if not _coconut_match_check_0:  #47 (line in Coconut source)
-                        _coconut_match_set_name_objs = _coconut_sentinel  #47 (line in Coconut source)
-                        if _coconut.type(_coconut_match_temp_5) in _coconut_self_match_types:  #47 (line in Coconut source)
-                            _coconut_match_set_name_objs = _coconut_match_temp_5  #47 (line in Coconut source)
-                            _coconut_match_check_0 = True  #47 (line in Coconut source)
-                        if _coconut_match_check_0:  #47 (line in Coconut source)
-                            if _coconut_match_set_name_objs is not _coconut_sentinel:  #47 (line in Coconut source)
-                                objs = _coconut_match_set_name_objs  #47 (line in Coconut source)
-
-                    if not _coconut_match_check_0:  #47 (line in Coconut source)
-                        _coconut_match_set_name_objs = _coconut_sentinel  #47 (line in Coconut source)
-                        if not _coconut.type(_coconut_match_temp_5) in _coconut_self_match_types:  #47 (line in Coconut source)
-                            _coconut_match_temp_8 = _coconut.getattr(list, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #47 (line in Coconut source)
-                            if not _coconut.isinstance(_coconut_match_temp_8, _coconut.tuple):  #47 (line in Coconut source)
-                                raise _coconut.TypeError("list.__match_args__ must be a tuple")  #47 (line in Coconut source)
-                            if _coconut.len(_coconut_match_temp_8) < 1:  #47 (line in Coconut source)
-                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'list' only supports %s)" % (_coconut.len(_coconut_match_temp_8),))  #47 (line in Coconut source)
-                            _coconut_match_temp_9 = _coconut.getattr(_coconut_match_temp_5, _coconut_match_temp_8[0], _coconut_sentinel)  #47 (line in Coconut source)
-                            if _coconut_match_temp_9 is not _coconut_sentinel:  #47 (line in Coconut source)
-                                _coconut_match_set_name_objs = _coconut_match_temp_9  #47 (line in Coconut source)
-                                _coconut_match_check_0 = True  #47 (line in Coconut source)
-                        if _coconut_match_check_0:  #47 (line in Coconut source)
-                            if _coconut_match_set_name_objs is not _coconut_sentinel:  #47 (line in Coconut source)
-                                objs = _coconut_match_set_name_objs  #47 (line in Coconut source)
+                    if not _coconut_match_check_0:  #51 (line in Coconut source)
+                        _coconut_match_set_name_content = _coconut_sentinel  #51 (line in Coconut source)
+                        if not _coconut.type(_coconut_match_temp_0) in _coconut_self_match_types:  #51 (line in Coconut source)
+                            _coconut_match_temp_3 = _coconut.getattr(str, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #51 (line in Coconut source)
+                            if not _coconut.isinstance(_coconut_match_temp_3, _coconut.tuple):  #51 (line in Coconut source)
+                                raise _coconut.TypeError("str.__match_args__ must be a tuple")  #51 (line in Coconut source)
+                            if _coconut.len(_coconut_match_temp_3) < 1:  #51 (line in Coconut source)
+                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'str' only supports %s)" % (_coconut.len(_coconut_match_temp_3),))  #51 (line in Coconut source)
+                            _coconut_match_temp_4 = _coconut.getattr(_coconut_match_temp_0, _coconut_match_temp_3[0], _coconut_sentinel)  #51 (line in Coconut source)
+                            if _coconut_match_temp_4 is not _coconut_sentinel:  #51 (line in Coconut source)
+                                _coconut_match_set_name_content = _coconut_match_temp_4  #51 (line in Coconut source)
+                                _coconut_match_check_0 = True  #51 (line in Coconut source)
+                        if _coconut_match_check_0:  #51 (line in Coconut source)
+                            if _coconut_match_set_name_content is not _coconut_sentinel:  #51 (line in Coconut source)
+                                content = _coconut_match_set_name_content  #51 (line in Coconut source)
 
 
 
 
 
-        if _coconut_match_check_0:  #47 (line in Coconut source)
+        if _coconut_match_check_0:  #51 (line in Coconut source)
 
-                return ("\n\n".join)((map)(assemble_prompt, objs))  #47 (line in Coconut source)
-
-    if not _coconut_match_check_0:  #48 (line in Coconut source)
-        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #48 (line in Coconut source)
-        _coconut_match_set_name_tag = _coconut_sentinel  #48 (line in Coconut source)
-        _coconut_match_set_name_content = _coconut_sentinel  #48 (line in Coconut source)
-        if _coconut.len(_coconut_match_args) == 1:  #48 (line in Coconut source)
-            if (_coconut.isinstance(_coconut_match_args[0], _coconut.abc.Sequence)) and (_coconut.len(_coconut_match_args[0]) == 2):  #48 (line in Coconut source)
-                _coconut_match_set_name_tag = _coconut_match_args[0][0]  #48 (line in Coconut source)
-                _coconut_match_set_name_content = _coconut_match_args[0][1]  #48 (line in Coconut source)
-                if not _coconut_match_kwargs:  #48 (line in Coconut source)
-                    _coconut_match_check_0 = True  #48 (line in Coconut source)
-        if _coconut_match_check_0:  #48 (line in Coconut source)
-            if _coconut_match_set_name_tag is not _coconut_sentinel:  #48 (line in Coconut source)
-                tag = _coconut_match_set_name_tag  #48 (line in Coconut source)
-            if _coconut_match_set_name_content is not _coconut_sentinel:  #48 (line in Coconut source)
-                content = _coconut_match_set_name_content  #48 (line in Coconut source)
-
-        if _coconut_match_check_0:  #48 (line in Coconut source)
-
-                return "<{_coconut_format_0}>\n{_coconut_format_1}\n</{_coconut_format_2}>".format(_coconut_format_0=(tag), _coconut_format_1=(content), _coconut_format_2=(tag))  #48 (line in Coconut source)
-
-    if not _coconut_match_check_0:  #49 (line in Coconut source)
-        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #49 (line in Coconut source)
-        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "tags" in _coconut_match_kwargs)) == 1):  #49 (line in Coconut source)
-            _coconut_match_temp_10 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("tags")  #49 (line in Coconut source)
-            _coconut_match_temp_11 = _coconut.getattr(dict, "_coconut_is_data", False) or _coconut.isinstance(dict, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in dict)  # type: ignore  #49 (line in Coconut source)
-            if not _coconut_match_kwargs:  #49 (line in Coconut source)
-                _coconut_match_check_0 = True  #49 (line in Coconut source)
-        if _coconut_match_check_0:  #49 (line in Coconut source)
-            _coconut_match_check_0 = False  #49 (line in Coconut source)
-            if not _coconut_match_check_0:  #49 (line in Coconut source)
-                _coconut_match_set_name_tags = _coconut_sentinel  #49 (line in Coconut source)
-                if (_coconut_match_temp_11) and (_coconut.isinstance(_coconut_match_temp_10, dict)) and (_coconut.len(_coconut_match_temp_10) >= 1):  #49 (line in Coconut source)
-                    _coconut_match_set_name_tags = _coconut_match_temp_10[0]  #49 (line in Coconut source)
-                    _coconut_match_temp_12 = _coconut.len(_coconut_match_temp_10) <= _coconut.max(1, _coconut.len(_coconut_match_temp_10.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_10, "_coconut_data_defaults", {}) and _coconut_match_temp_10[i] == _coconut.getattr(_coconut_match_temp_10, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_10.__match_args__))) if _coconut.hasattr(_coconut_match_temp_10, "__match_args__") else _coconut.len(_coconut_match_temp_10) == 1  # type: ignore  #49 (line in Coconut source)
-                    if _coconut_match_temp_12:  #49 (line in Coconut source)
-                        _coconut_match_check_0 = True  #49 (line in Coconut source)
-                if _coconut_match_check_0:  #49 (line in Coconut source)
-                    if _coconut_match_set_name_tags is not _coconut_sentinel:  #49 (line in Coconut source)
-                        tags = _coconut_match_set_name_tags  #49 (line in Coconut source)
-
-            if not _coconut_match_check_0:  #49 (line in Coconut source)
-                if (not _coconut_match_temp_11) and (_coconut.isinstance(_coconut_match_temp_10, dict)):  #49 (line in Coconut source)
-                    _coconut_match_check_0 = True  #49 (line in Coconut source)
-                if _coconut_match_check_0:  #49 (line in Coconut source)
-                    _coconut_match_check_0 = False  #49 (line in Coconut source)
-                    if not _coconut_match_check_0:  #49 (line in Coconut source)
-                        _coconut_match_set_name_tags = _coconut_sentinel  #49 (line in Coconut source)
-                        if _coconut.type(_coconut_match_temp_10) in _coconut_self_match_types:  #49 (line in Coconut source)
-                            _coconut_match_set_name_tags = _coconut_match_temp_10  #49 (line in Coconut source)
-                            _coconut_match_check_0 = True  #49 (line in Coconut source)
-                        if _coconut_match_check_0:  #49 (line in Coconut source)
-                            if _coconut_match_set_name_tags is not _coconut_sentinel:  #49 (line in Coconut source)
-                                tags = _coconut_match_set_name_tags  #49 (line in Coconut source)
-
-                    if not _coconut_match_check_0:  #49 (line in Coconut source)
-                        _coconut_match_set_name_tags = _coconut_sentinel  #49 (line in Coconut source)
-                        if not _coconut.type(_coconut_match_temp_10) in _coconut_self_match_types:  #49 (line in Coconut source)
-                            _coconut_match_temp_13 = _coconut.getattr(dict, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #49 (line in Coconut source)
-                            if not _coconut.isinstance(_coconut_match_temp_13, _coconut.tuple):  #49 (line in Coconut source)
-                                raise _coconut.TypeError("dict.__match_args__ must be a tuple")  #49 (line in Coconut source)
-                            if _coconut.len(_coconut_match_temp_13) < 1:  #49 (line in Coconut source)
-                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'dict' only supports %s)" % (_coconut.len(_coconut_match_temp_13),))  #49 (line in Coconut source)
-                            _coconut_match_temp_14 = _coconut.getattr(_coconut_match_temp_10, _coconut_match_temp_13[0], _coconut_sentinel)  #49 (line in Coconut source)
-                            if _coconut_match_temp_14 is not _coconut_sentinel:  #49 (line in Coconut source)
-                                _coconut_match_set_name_tags = _coconut_match_temp_14  #49 (line in Coconut source)
-                                _coconut_match_check_0 = True  #49 (line in Coconut source)
-                        if _coconut_match_check_0:  #49 (line in Coconut source)
-                            if _coconut_match_set_name_tags is not _coconut_sentinel:  #49 (line in Coconut source)
-                                tags = _coconut_match_set_name_tags  #49 (line in Coconut source)
-
-
-
-
-
-        if _coconut_match_check_0:  #49 (line in Coconut source)
-
-                return (assemble_prompt)((list)(tags.items()))  #49 (line in Coconut source)
-
-
+                return content  #51 (line in Coconut source)
 
     if not _coconut_match_check_0:  #52 (line in Coconut source)
-        raise _coconut_FunctionMatchError('case def assemble_prompt:', _coconut_match_args)  #52 (line in Coconut source)
+        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #52 (line in Coconut source)
+        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "objs" in _coconut_match_kwargs)) == 1):  #52 (line in Coconut source)
+            _coconut_match_temp_5 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("objs")  #52 (line in Coconut source)
+            _coconut_match_temp_6 = _coconut.getattr(list, "_coconut_is_data", False) or _coconut.isinstance(list, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in list)  # type: ignore  #52 (line in Coconut source)
+            if not _coconut_match_kwargs:  #52 (line in Coconut source)
+                _coconut_match_check_0 = True  #52 (line in Coconut source)
+        if _coconut_match_check_0:  #52 (line in Coconut source)
+            _coconut_match_check_0 = False  #52 (line in Coconut source)
+            if not _coconut_match_check_0:  #52 (line in Coconut source)
+                _coconut_match_set_name_objs = _coconut_sentinel  #52 (line in Coconut source)
+                if (_coconut_match_temp_6) and (_coconut.isinstance(_coconut_match_temp_5, list)) and (_coconut.len(_coconut_match_temp_5) >= 1):  #52 (line in Coconut source)
+                    _coconut_match_set_name_objs = _coconut_match_temp_5[0]  #52 (line in Coconut source)
+                    _coconut_match_temp_7 = _coconut.len(_coconut_match_temp_5) <= _coconut.max(1, _coconut.len(_coconut_match_temp_5.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_5, "_coconut_data_defaults", {}) and _coconut_match_temp_5[i] == _coconut.getattr(_coconut_match_temp_5, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_5.__match_args__))) if _coconut.hasattr(_coconut_match_temp_5, "__match_args__") else _coconut.len(_coconut_match_temp_5) == 1  # type: ignore  #52 (line in Coconut source)
+                    if _coconut_match_temp_7:  #52 (line in Coconut source)
+                        _coconut_match_check_0 = True  #52 (line in Coconut source)
+                if _coconut_match_check_0:  #52 (line in Coconut source)
+                    if _coconut_match_set_name_objs is not _coconut_sentinel:  #52 (line in Coconut source)
+                        objs = _coconut_match_set_name_objs  #52 (line in Coconut source)
 
-def generate_prompt(all_debug_context):  #52 (line in Coconut source)
-    """Generate a full prompt for Claude using the given debug context."""  #53 (line in Coconut source)
-    prompt_cmpts = [PREAMBLE,]  #54 (line in Coconut source)
+            if not _coconut_match_check_0:  #52 (line in Coconut source)
+                if (not _coconut_match_temp_6) and (_coconut.isinstance(_coconut_match_temp_5, list)):  #52 (line in Coconut source)
+                    _coconut_match_check_0 = True  #52 (line in Coconut source)
+                if _coconut_match_check_0:  #52 (line in Coconut source)
+                    _coconut_match_check_0 = False  #52 (line in Coconut source)
+                    if not _coconut_match_check_0:  #52 (line in Coconut source)
+                        _coconut_match_set_name_objs = _coconut_sentinel  #52 (line in Coconut source)
+                        if _coconut.type(_coconut_match_temp_5) in _coconut_self_match_types:  #52 (line in Coconut source)
+                            _coconut_match_set_name_objs = _coconut_match_temp_5  #52 (line in Coconut source)
+                            _coconut_match_check_0 = True  #52 (line in Coconut source)
+                        if _coconut_match_check_0:  #52 (line in Coconut source)
+                            if _coconut_match_set_name_objs is not _coconut_sentinel:  #52 (line in Coconut source)
+                                objs = _coconut_match_set_name_objs  #52 (line in Coconut source)
 
-    for filename, debug_contexts in all_debug_context.items():  #56 (line in Coconut source)
-        file_prompt_cmpts = [_coconut.dict((("source_code", (("\n".join)(_coconut_iter_getitem(((filter)(ident, (map)(_coconut.operator.attrgetter("source_lines"), debug_contexts))), (0))))),)),]  #57 (line in Coconut source)
-        for ctx in debug_contexts:  #66 (line in Coconut source)
-            info_dict = _coconut.dict((("executing_function", ctx.function), ("surrounding_code", ("\n".join)(ctx.context_lines))))  #67 (line in Coconut source)
-            info_dict |= ctx.extra_info  #71 (line in Coconut source)
-            file_prompt_cmpts += [_coconut.dict(((ctx.name, info_dict),)),]  #72 (line in Coconut source)
-        prompt_cmpts += [_coconut.dict(((filename, file_prompt_cmpts),)),]  #73 (line in Coconut source)
+                    if not _coconut_match_check_0:  #52 (line in Coconut source)
+                        _coconut_match_set_name_objs = _coconut_sentinel  #52 (line in Coconut source)
+                        if not _coconut.type(_coconut_match_temp_5) in _coconut_self_match_types:  #52 (line in Coconut source)
+                            _coconut_match_temp_8 = _coconut.getattr(list, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #52 (line in Coconut source)
+                            if not _coconut.isinstance(_coconut_match_temp_8, _coconut.tuple):  #52 (line in Coconut source)
+                                raise _coconut.TypeError("list.__match_args__ must be a tuple")  #52 (line in Coconut source)
+                            if _coconut.len(_coconut_match_temp_8) < 1:  #52 (line in Coconut source)
+                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'list' only supports %s)" % (_coconut.len(_coconut_match_temp_8),))  #52 (line in Coconut source)
+                            _coconut_match_temp_9 = _coconut.getattr(_coconut_match_temp_5, _coconut_match_temp_8[0], _coconut_sentinel)  #52 (line in Coconut source)
+                            if _coconut_match_temp_9 is not _coconut_sentinel:  #52 (line in Coconut source)
+                                _coconut_match_set_name_objs = _coconut_match_temp_9  #52 (line in Coconut source)
+                                _coconut_match_check_0 = True  #52 (line in Coconut source)
+                        if _coconut_match_check_0:  #52 (line in Coconut source)
+                            if _coconut_match_set_name_objs is not _coconut_sentinel:  #52 (line in Coconut source)
+                                objs = _coconut_match_set_name_objs  #52 (line in Coconut source)
 
-    prompt_cmpts += [POSTAMBLE,]  #75 (line in Coconut source)
-    return assemble_prompt(prompt_cmpts)  #76 (line in Coconut source)
 
 
 
 
-def launch_claude():  #80 (line in Coconut source)
-    """Launch claude.ai with all the collected debug context."""  #81 (line in Coconut source)
-    print(generate_prompt(ALL_DEBUG_CONTEXT))  #82 (line in Coconut source)
+        if _coconut_match_check_0:  #52 (line in Coconut source)
+
+                return ("\n\n".join)((map)(assemble_prompt, objs))  #52 (line in Coconut source)
+
+    if not _coconut_match_check_0:  #53 (line in Coconut source)
+        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #53 (line in Coconut source)
+        if (_coconut.len(_coconut_match_args) <= 1) and (_coconut.sum((_coconut.len(_coconut_match_args) > 0, "tags" in _coconut_match_kwargs)) == 1):  #53 (line in Coconut source)
+            _coconut_match_temp_10 = _coconut_match_args[0] if _coconut.len(_coconut_match_args) > 0 else _coconut_match_kwargs.pop("tags")  #53 (line in Coconut source)
+            _coconut_match_temp_11 = _coconut.getattr(dict, "_coconut_is_data", False) or _coconut.isinstance(dict, _coconut.tuple) and _coconut.all(_coconut.getattr(_coconut_x, "_coconut_is_data", False) for _coconut_x in dict)  # type: ignore  #53 (line in Coconut source)
+            if not _coconut_match_kwargs:  #53 (line in Coconut source)
+                _coconut_match_check_0 = True  #53 (line in Coconut source)
+        if _coconut_match_check_0:  #53 (line in Coconut source)
+            _coconut_match_check_0 = False  #53 (line in Coconut source)
+            if not _coconut_match_check_0:  #53 (line in Coconut source)
+                _coconut_match_set_name_tags = _coconut_sentinel  #53 (line in Coconut source)
+                if (_coconut_match_temp_11) and (_coconut.isinstance(_coconut_match_temp_10, dict)) and (_coconut.len(_coconut_match_temp_10) >= 1):  #53 (line in Coconut source)
+                    _coconut_match_set_name_tags = _coconut_match_temp_10[0]  #53 (line in Coconut source)
+                    _coconut_match_temp_12 = _coconut.len(_coconut_match_temp_10) <= _coconut.max(1, _coconut.len(_coconut_match_temp_10.__match_args__)) and _coconut.all(i in _coconut.getattr(_coconut_match_temp_10, "_coconut_data_defaults", {}) and _coconut_match_temp_10[i] == _coconut.getattr(_coconut_match_temp_10, "_coconut_data_defaults", {})[i] for i in _coconut.range(1, _coconut.len(_coconut_match_temp_10.__match_args__))) if _coconut.hasattr(_coconut_match_temp_10, "__match_args__") else _coconut.len(_coconut_match_temp_10) == 1  # type: ignore  #53 (line in Coconut source)
+                    if _coconut_match_temp_12:  #53 (line in Coconut source)
+                        _coconut_match_check_0 = True  #53 (line in Coconut source)
+                if _coconut_match_check_0:  #53 (line in Coconut source)
+                    if _coconut_match_set_name_tags is not _coconut_sentinel:  #53 (line in Coconut source)
+                        tags = _coconut_match_set_name_tags  #53 (line in Coconut source)
+
+            if not _coconut_match_check_0:  #53 (line in Coconut source)
+                if (not _coconut_match_temp_11) and (_coconut.isinstance(_coconut_match_temp_10, dict)):  #53 (line in Coconut source)
+                    _coconut_match_check_0 = True  #53 (line in Coconut source)
+                if _coconut_match_check_0:  #53 (line in Coconut source)
+                    _coconut_match_check_0 = False  #53 (line in Coconut source)
+                    if not _coconut_match_check_0:  #53 (line in Coconut source)
+                        _coconut_match_set_name_tags = _coconut_sentinel  #53 (line in Coconut source)
+                        if _coconut.type(_coconut_match_temp_10) in _coconut_self_match_types:  #53 (line in Coconut source)
+                            _coconut_match_set_name_tags = _coconut_match_temp_10  #53 (line in Coconut source)
+                            _coconut_match_check_0 = True  #53 (line in Coconut source)
+                        if _coconut_match_check_0:  #53 (line in Coconut source)
+                            if _coconut_match_set_name_tags is not _coconut_sentinel:  #53 (line in Coconut source)
+                                tags = _coconut_match_set_name_tags  #53 (line in Coconut source)
+
+                    if not _coconut_match_check_0:  #53 (line in Coconut source)
+                        _coconut_match_set_name_tags = _coconut_sentinel  #53 (line in Coconut source)
+                        if not _coconut.type(_coconut_match_temp_10) in _coconut_self_match_types:  #53 (line in Coconut source)
+                            _coconut_match_temp_13 = _coconut.getattr(dict, '__match_args__', ())  # type: _coconut.typing.Any  # type: ignore  #53 (line in Coconut source)
+                            if not _coconut.isinstance(_coconut_match_temp_13, _coconut.tuple):  #53 (line in Coconut source)
+                                raise _coconut.TypeError("dict.__match_args__ must be a tuple")  #53 (line in Coconut source)
+                            if _coconut.len(_coconut_match_temp_13) < 1:  #53 (line in Coconut source)
+                                raise _coconut.TypeError("too many positional args in class match (pattern requires 1; 'dict' only supports %s)" % (_coconut.len(_coconut_match_temp_13),))  #53 (line in Coconut source)
+                            _coconut_match_temp_14 = _coconut.getattr(_coconut_match_temp_10, _coconut_match_temp_13[0], _coconut_sentinel)  #53 (line in Coconut source)
+                            if _coconut_match_temp_14 is not _coconut_sentinel:  #53 (line in Coconut source)
+                                _coconut_match_set_name_tags = _coconut_match_temp_14  #53 (line in Coconut source)
+                                _coconut_match_check_0 = True  #53 (line in Coconut source)
+                        if _coconut_match_check_0:  #53 (line in Coconut source)
+                            if _coconut_match_set_name_tags is not _coconut_sentinel:  #53 (line in Coconut source)
+                                tags = _coconut_match_set_name_tags  #53 (line in Coconut source)
+
+
+
+
+
+        if _coconut_match_check_0:  #53 (line in Coconut source)
+
+                return (assemble_prompt)((list)(tags.items()))  #53 (line in Coconut source)
+
+    if not _coconut_match_check_0:  #54 (line in Coconut source)
+        _coconut_match_kwargs = _coconut_match_kwargs_store.copy()  #54 (line in Coconut source)
+        _coconut_match_set_name_tag = _coconut_sentinel  #54 (line in Coconut source)
+        _coconut_match_set_name_content = _coconut_sentinel  #54 (line in Coconut source)
+        if _coconut.len(_coconut_match_args) == 1:  #54 (line in Coconut source)
+            if (_coconut.isinstance(_coconut_match_args[0], _coconut.abc.Sequence)) and (_coconut.len(_coconut_match_args[0]) == 2):  #54 (line in Coconut source)
+                _coconut_match_set_name_tag = _coconut_match_args[0][0]  #54 (line in Coconut source)
+                _coconut_match_set_name_content = _coconut_match_args[0][1]  #54 (line in Coconut source)
+                if not _coconut_match_kwargs:  #54 (line in Coconut source)
+                    _coconut_match_check_0 = True  #54 (line in Coconut source)
+        if _coconut_match_check_0:  #54 (line in Coconut source)
+            if _coconut_match_set_name_tag is not _coconut_sentinel:  #54 (line in Coconut source)
+                tag = _coconut_match_set_name_tag  #54 (line in Coconut source)
+            if _coconut_match_set_name_content is not _coconut_sentinel:  #54 (line in Coconut source)
+                content = _coconut_match_set_name_content  #54 (line in Coconut source)
+
+        if _coconut_match_check_0:  #54 (line in Coconut source)
+
+                return "<{_coconut_format_0}>\n{_coconut_format_1}\n</{_coconut_format_2}>".format(_coconut_format_0=(tag), _coconut_format_1=(assemble_prompt(content)), _coconut_format_2=(tag))  #54 (line in Coconut source)
+
+
+
+    if not _coconut_match_check_0:  #57 (line in Coconut source)
+        raise _coconut_FunctionMatchError('case def assemble_prompt:', _coconut_match_args)  #57 (line in Coconut source)
+
+def generate_prompt(all_debug_context, max_context_items):  #57 (line in Coconut source)
+    """Generate a full prompt for Claude using the given debug context."""  #58 (line in Coconut source)
+    prompt_cmpts = [PREAMBLE,]  #59 (line in Coconut source)
+
+    for filepath, debug_contexts in all_debug_context.items():  #61 (line in Coconut source)
+        filename = os.path.basename(filepath)  #62 (line in Coconut source)
+        file_prompt_cmpts = [_coconut.dict((("source_code", (("".join)(_coconut_iter_getitem(((filter)(ident, (map)(_coconut.operator.attrgetter("source_lines"), debug_contexts))), (0))))),)),]  #63 (line in Coconut source)
+        for ctx in _coconut_iter_getitem(debug_contexts, _coconut.slice(-max_context_items, None)):  #72 (line in Coconut source)
+            info_dict = _coconut.dict((("executing_function", ctx.function), ("executing_code", ("".join)(ctx.context_lines))))  #73 (line in Coconut source)
+            info_dict |= ctx.extra_info  #77 (line in Coconut source)
+            file_prompt_cmpts += [_coconut.dict(((ctx.name, info_dict),)),]  #78 (line in Coconut source)
+        prompt_cmpts += [_coconut.dict(((filename, file_prompt_cmpts),)),]  #79 (line in Coconut source)
+
+    prompt_cmpts += [POSTAMBLE,]  #81 (line in Coconut source)
+    return assemble_prompt(prompt_cmpts)  #82 (line in Coconut source)
+
+
+
+def launch_claude(max_context_items=5):  #85 (line in Coconut source)
+    """Launch claude.ai with all the collected debug context."""  #86 (line in Coconut source)
+    prompt = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=max_context_items)  #87 (line in Coconut source)
+    encoded_prompt = urllib.parse.quote_plus(prompt)  #88 (line in Coconut source)
+    webbrowser.open("https://claude.ai/new?q={_coconut_format_0}".format(_coconut_format_0=(encoded_prompt)))  #89 (line in Coconut source)

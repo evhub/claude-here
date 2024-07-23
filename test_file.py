@@ -2,7 +2,7 @@ import claude_here
 
 
 def fib(x):
-    breakpoint()
+    breakpoint(launch=False)
     if x == 0:
         return 1
     return fib(x-2) + fib(x-1)

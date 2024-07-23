@@ -30,9 +30,12 @@ data DebugContext(
     def raw_source(self) = "\n".join(self.source_lines)
 
 
+IGNORED_VARS = set(dir(builtins)) | {"claude_here"}
+
+
 def format_vars(vardict) = {
     name: val for name, val in vardict.items()
-    if name not in vars(builtins)
+    if not name.startswith("__") and name not in IGNORED_VARS
 } |> repr
 
 

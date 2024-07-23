@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0xdd29718f
+# __coconut_hash__ = 0xb8a8d6a0
 
 # Compiled with Coconut version 3.1.1-post_dev2
 
@@ -117,30 +117,33 @@ class DebugContext(_coconut.typing.NamedTuple("DebugContext", [("name", 'str'), 
 
 
 _coconut_call_set_names(DebugContext)  #33 (line in Coconut source)
-def format_vars(vardict):  #33 (line in Coconut source)
-    return (repr)(_coconut.dict(((name), (val)) for name, val in vardict.items() if name not in vars(builtins)))  #33 (line in Coconut source)
+IGNORED_VARS = set(dir(builtins)) | _coconut.set(("claude_here",))  #33 (line in Coconut source)
+
+
+def format_vars(vardict):  #36 (line in Coconut source)
+    return (repr)(_coconut.dict(((name), (val)) for name, val in vardict.items() if not name.startswith("__") and name not in IGNORED_VARS))  #36 (line in Coconut source)
 
 
 
-def collect_stack_info(stack_level=1):  #39 (line in Coconut source)
-    """Collect information about the callee site for sending to Claude."""  #40 (line in Coconut source)
-    cur_frame = inspect.currentframe()  #41 (line in Coconut source)
-    outer_frame = reduce(lambda frame, _: frame.f_back, range(stack_level), cur_frame)  #42 (line in Coconut source)
+def collect_stack_info(stack_level=1):  #42 (line in Coconut source)
+    """Collect information about the callee site for sending to Claude."""  #43 (line in Coconut source)
+    cur_frame = inspect.currentframe()  #44 (line in Coconut source)
+    outer_frame = reduce(lambda frame, _: frame.f_back, range(stack_level), cur_frame)  #45 (line in Coconut source)
 
-    frame_info = inspect.getframeinfo(outer_frame)  #48 (line in Coconut source)
-    try:  #49 (line in Coconut source)
-        source_lines, source_lineno = inspect.getsourcelines(outer_frame)  #50 (line in Coconut source)
-    except OSError:  #51 (line in Coconut source)
-        source_lines = []  #52 (line in Coconut source)
+    frame_info = inspect.getframeinfo(outer_frame)  #51 (line in Coconut source)
+    try:  #52 (line in Coconut source)
+        source_lines, source_lineno = inspect.getsourcelines(outer_frame)  #53 (line in Coconut source)
+    except OSError:  #54 (line in Coconut source)
+        source_lines = []  #55 (line in Coconut source)
 
-    return DebugContext(name="breakpoint", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("locals", format_vars(outer_frame.f_locals)), ("globals", format_vars(outer_frame.f_globals)))))  #54 (line in Coconut source)
+    return DebugContext(name="breakpoint", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("locals", format_vars(outer_frame.f_locals)), ("globals", format_vars(outer_frame.f_globals)))))  #57 (line in Coconut source)
 
 
 
-def collect_exc_info(exc_type, exc_val, exc_tb):  #65 (line in Coconut source)
-    """Collect information about the given exception for sending to Claude."""  #66 (line in Coconut source)
-    frame_info = inspect.getframeinfo(exc_tb.tb_frame)  #67 (line in Coconut source)
-    source_lines, source_lineno = inspect.getsourcelines(exc_tb)  #68 (line in Coconut source)
-    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, exc_tb))  #69 (line in Coconut source)
+def collect_exc_info(exc_type, exc_val, exc_tb):  #68 (line in Coconut source)
+    """Collect information about the given exception for sending to Claude."""  #69 (line in Coconut source)
+    frame_info = inspect.getframeinfo(exc_tb.tb_frame)  #70 (line in Coconut source)
+    source_lines, source_lineno = inspect.getsourcelines(exc_tb)  #71 (line in Coconut source)
+    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, exc_tb))  #72 (line in Coconut source)
 
-    return DebugContext(name="exception", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #71 (line in Coconut source)
+    return DebugContext(name="exception", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #74 (line in Coconut source)

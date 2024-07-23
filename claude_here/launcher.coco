@@ -1,3 +1,7 @@
+import os
+import urllib
+import webbrowser
+
 from claude_here.debugger import ALL_DEBUG_CONTEXT
 
 
@@ -8,7 +12,7 @@ from claude_here.debugger import ALL_DEBUG_CONTEXT
 #     - The traceback if it's from an exception.
 #     - The locals and globals if it's from a breakpoint.
 
-PREAMBLE = """You are a Claude, an AI assistant specialized in debugging Python code. Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
+PREAMBLE = """Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
 
 Here's the information you'll be working with:"""
 
@@ -16,10 +20,10 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
 
 1. Analyze the source code:
    - Look for syntax errors, logical errors, or potential issues in the code structure.
-   - Pay attention to common Python pitfalls like indentation errors, missing colons, or incorrect function definitions.
+   - Pay attention to common Python pitfalls.
 
 2. Examine the breakpoint contexts and/or unhandled exceptions provided:
-   - For each context, note the filename, function, and surrounding context where the issue occurred.
+   - For each context, note the filename, function, and code context where the error occurred or breakpoint was reached.
    - If it's an exception, carefully review the traceback to understand the error type and message.
    - If it's a breakpoint, analyze the local and global variables to identify any unexpected values or states.
 
@@ -28,7 +32,7 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
    - Determine if the error is caused by the code itself or if it's related to external factors (e.g., missing dependencies, environment issues).
 
 4. Develop debugging suggestions:
-   - Propose clear and concise solutions to fix the identified issues.
+   - Propose clear and concise solutions to fix any identified issues.
    - If applicable, suggest alternative approaches or best practices to improve the code.
    - Provide explanations for your suggestions to help the user understand the reasoning behind them.
    - If there is anything you're not sure you understand from the provided context, you can ask the user for more information, but you should still give your best attempt at debugging given only the context provided.
@@ -37,36 +41,38 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
    - Summarize the identified issues and their locations in the code.
    - List your debugging suggestions in a clear and organized manner.
    - If relevant, include small code snippets to illustrate your suggestions.
+   - Format your response using Markdown.
 
-Format your response using Markdown. Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""
+Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""
 
 
 case def assemble_prompt:
     """Assemble a concrete prompt from the given structured prompt data."""
     case(str(content)) = content
     case(list(objs)) = objs |> map$(assemble_prompt) |> "\n\n".join
-    case((tag, content)) = f"<{tag}>\n{content}\n</{tag}>"
     case(dict(tags)) = tags.items() |> list |> assemble_prompt
+    case((tag, content)) = f"<{tag}>\n{assemble_prompt(content)}\n</{tag}>"
 
 
-def generate_prompt(all_debug_context):
+def generate_prompt(all_debug_context, max_context_items):
     """Generate a full prompt for Claude using the given debug context."""
     prompt_cmpts = [PREAMBLE]
 
-    for filename, debug_contexts in all_debug_context.items():
+    for filepath, debug_contexts in all_debug_context.items():
+        filename = os.path.basename(filepath)
         file_prompt_cmpts = [
             {"source_code": (
                 debug_contexts
                 |> map$(.source_lines)
                 |> filter$(ident)
                 |> .$[0]
-                |> "\n".join
+                |> "".join
             )},
         ]
-        for ctx in debug_contexts:
+        for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {
                 "executing_function": ctx.function,
-                "surrounding_code": ctx.context_lines |> "\n".join,
+                "executing_code": ctx.context_lines |> "".join,
             }
             info_dict |= ctx.extra_info
             file_prompt_cmpts += [{ctx.name: info_dict}]
@@ -76,7 +82,8 @@ def generate_prompt(all_debug_context):
     return assemble_prompt(prompt_cmpts)
 
 
-
-def launch_claude():
+def launch_claude(max_context_items=5):
     """Launch claude.ai with all the collected debug context."""
-    print(generate_prompt(ALL_DEBUG_CONTEXT))
+    prompt = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
+    encoded_prompt = urllib.parse.quote_plus(prompt)
+    webbrowser.open(f"https://claude.ai/new?q={encoded_prompt}")
