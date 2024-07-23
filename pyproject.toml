@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude_here"
+version = "0.0.1"
+authors = [
+  { name="Evan Hubinger", email="evanjhub@gmail.com" },
+]
+description = "debug Python with claude.ai"
+readme = "README.md"
+requires-python = ">=3.2"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/evhub/claude-here"
+Issues = "https://github.com/evhub/claude-here/issues"

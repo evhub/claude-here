@@ -16,22 +16,22 @@ setup:
 
 .PHONY: unclean-build
 unclean-build:
-	coconut claude_here --no-tco --strict
+	coconut claude_here --target 3 --no-tco --strict
 
 .PHONY: build
 build: clean unclean-build
 
 .PHONY: force-build
 force-build: clean
-	coconut claude_here --force --no-tco --strict
+	coconut claude_here --force --target 3 --no-tco --strict
 
 .PHONY: package
 package:
-	python setup.py sdist bdist_wheel
+	python -m pip install -U pip setuptools wheel twine importlib_metadata build
+	python -m build
 
 .PHONY: upload
 upload: install package
-	python -m pip install -U --ignore-installed twine
 	twine upload dist/*
 
 .PHONY: clean

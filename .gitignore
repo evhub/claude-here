@@ -163,3 +163,7 @@ cython_debug/
 
 # Coconut
 __coconut_cache__/
+
+# Python files
+*.py
+!test_file.py
