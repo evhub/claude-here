@@ -8,11 +8,11 @@ import os
 #     - The traceback if it's from an exception.
 #     - The locals and globals if it's from a breakpoint.
 
-PREAMBLE = """Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help.
+BASE_PROMPT = """Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions.
 
-Here's the information you'll be working with:"""
+You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help. It is expected that `claude_here` will be imported and not used.
 
-POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or unhandled exceptions provided above. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
+Carefully examine the attached source code, breakpoint contexts, and/or unhandled exceptions. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
 
 1. Analyze the source code:
    - Look for syntax errors, logical errors, or potential issues in the code structure.
@@ -67,8 +67,8 @@ case def assemble_prompt:
 
 
 def generate_prompt(all_debug_context, max_context_items):
-    """Generate a full prompt for Claude using the given debug context."""
-    prompt_cmpts = [PREAMBLE]
+    """Generate a full prompt and attachment for Claude using the given debug context."""
+    prompt_cmpts = []
 
     for filepath, debug_contexts in all_debug_context.items():
         coconut_filepath = os.path.splitext(filepath)[0] + ".coco"
@@ -98,5 +98,5 @@ def generate_prompt(all_debug_context, max_context_items):
 
         prompt_cmpts += [{filename: file_prompt_cmpts |> SeparatedBy$("\n\n")}]
 
-    prompt_cmpts += [POSTAMBLE]
-    return assemble_prompt(prompt_cmpts |> SeparatedBy$("\n\n"))
+    attachment = assemble_prompt(prompt_cmpts |> SeparatedBy$("\n\n"))
+    return (prompt=BASE_PROMPT, attachment=attachment)

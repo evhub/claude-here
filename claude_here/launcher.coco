@@ -20,12 +20,22 @@ def get_bool_env_var(env_var, default=None):
         return default
 
 
-def launch_claude(max_context_items, dry_run=None):
+DEFAULT_MAX_CONTEXT_ITEMS = 10
+
+
+def launch_claude(max_context_items=DEFAULT_MAX_CONTEXT_ITEMS, project_id=None, dry_run=None):
     """Launch claude.ai with all the collected debug context."""
+    project_id ??= os.getenv("CLAUDE_HERE_PROJECT_ID", None)
     dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
-    prompt = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
+
+    tuple(prompt=prompt, attachment=attachment) = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
     if dry_run:
         print(prompt)
+        if attachment:
+            print(attachment)
     else:
-        encoded_prompt = urllib.parse.quote_plus(prompt)
-        webbrowser.open(f"https://claude.ai/new?q={encoded_prompt}")
+        webbrowser.open(
+            f"https://claude.ai/new?q={urllib.parse.quote_plus(prompt)}"
+            + (f"&attachment={urllib.parse.quote_plus(attachment)}" if attachment else "")
+            + (f"&project={urllib.parse.quote_plus(project_id)}" if project_id else "")
+        )
