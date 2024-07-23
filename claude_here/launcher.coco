@@ -1,6 +1,7 @@
 import os
 import urllib
 import webbrowser
+from warnings import warn
 
 from claude_here.debugger import ALL_DEBUG_CONTEXT
 
@@ -46,12 +47,28 @@ POSTAMBLE = """Carefully examine the source code, breakpoint contexts, and/or un
 Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""
 
 
+data Markdown(str(code))
+data SeparatedBy(str(sep), list(objs))
+
+
 case def assemble_prompt:
     """Assemble a concrete prompt from the given structured prompt data."""
     case(str(content)) = content
-    case(list(objs)) = objs |> map$(assemble_prompt) |> "\n\n".join
-    case(dict(tags)) = tags.items() |> list |> assemble_prompt
-    case((tag, content)) = f"<{tag}>\n{assemble_prompt(content)}\n</{tag}>"
+
+    case(list(objs)) =
+        assemble_prompt(SeparatedBy("\n", objs))
+
+    case(SeparatedBy(sep, objs)) =
+        objs |> map$(assemble_prompt) |> sep.join
+
+    case(dict(tags)) =
+        tags.items() |> list |> assemble_prompt
+
+    case((tag, content)) =
+        f"<{tag}>\n{assemble_prompt(content)}\n</{tag}>"
+
+    case(Markdown(code)) =
+        f"\n```python\n{code.rstrip()}\n```\n"
 
 
 def generate_prompt(all_debug_context, max_context_items):
@@ -67,23 +84,41 @@ def generate_prompt(all_debug_context, max_context_items):
                 |> filter$(ident)
                 |> .$[0]
                 |> "".join
+                |> Markdown
             )},
         ]
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {
                 "executing_function": ctx.function,
-                "executing_code": ctx.context_lines |> "".join,
+                "executing_code": ctx.context_lines |> "".join |> Markdown,
+                "line_number": ctx.lineno |> str,
             }
             info_dict |= ctx.extra_info
             file_prompt_cmpts += [{ctx.name: info_dict}]
-        prompt_cmpts += [{filename: file_prompt_cmpts}]
+        prompt_cmpts += [{filename: file_prompt_cmpts |> SeparatedBy$("\n\n")}]
 
     prompt_cmpts += [POSTAMBLE]
-    return assemble_prompt(prompt_cmpts)
+    return assemble_prompt(prompt_cmpts |> SeparatedBy$("\n\n"))
 
 
-def launch_claude(max_context_items=5):
+def get_bool_env_var(env_var, default=None):
+    """Get a boolean from an environment variable."""
+    boolstr = os.getenv(env_var, "").lower()
+    if boolstr in ("true", "yes", "on", "1", "t"):
+        return True
+    elif boolstr in ("false", "no", "off", "0", "f"):
+        return False
+    else:
+        if boolstr not in ("", "none", "default"):
+            warn(f"{env_var} has invalid value {os.getenv(env_var)!r} (defaulting to {default})")
+        return default
+
+
+def launch_claude(max_context_items, debug=None):
     """Launch claude.ai with all the collected debug context."""
+    debug ??= get_bool_env_var("CLAUDE_HERE_DEBUG", False)
     prompt = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
+    if debug:
+        print(prompt)
     encoded_prompt = urllib.parse.quote_plus(prompt)
     webbrowser.open(f"https://claude.ai/new?q={encoded_prompt}")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0xb8a8d6a0
+# __coconut_hash__ = 0x9cc94f9e
 
 # Compiled with Coconut version 3.1.1-post_dev2
 
@@ -140,10 +140,35 @@ def collect_stack_info(stack_level=1):  #42 (line in Coconut source)
 
 
 
-def collect_exc_info(exc_type, exc_val, exc_tb):  #68 (line in Coconut source)
-    """Collect information about the given exception for sending to Claude."""  #69 (line in Coconut source)
-    frame_info = inspect.getframeinfo(exc_tb.tb_frame)  #70 (line in Coconut source)
-    source_lines, source_lineno = inspect.getsourcelines(exc_tb)  #71 (line in Coconut source)
-    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, exc_tb))  #72 (line in Coconut source)
+def filter_traceback(orig_tb):  #68 (line in Coconut source)
+    """Filter out traceback frames from claude_here."""  #69 (line in Coconut source)
+    new_tb_top = orig_tb  #70 (line in Coconut source)
+    while new_tb_top is not None and new_tb_top.tb_frame.f_globals.get("__package__") == "claude_here":  #71 (line in Coconut source)
+# print({k:v for k,v in new_tb_top.tb_frame.f_globals.items() if k.startswith("__")})
+        new_tb_top = new_tb_top.tb_next  #73 (line in Coconut source)
 
-    return DebugContext(name="exception", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #74 (line in Coconut source)
+    if new_tb_top is not None:  #75 (line in Coconut source)
+        tb_cursor_plus_1 = new_tb_top  #76 (line in Coconut source)
+        tb_cursor = tb_cursor_plus_1.tb_next  #77 (line in Coconut source)
+        while tb_cursor is not None:  #78 (line in Coconut source)
+            tb_cursor_minus_1 = tb_cursor.tb_next  #79 (line in Coconut source)
+# print({k:v for k,v in tb_cursor.tb_frame.f_globals.items() if k.startswith("__")})
+            if tb_cursor.tb_frame.f_globals.get("__package__") == "claude_here":  #81 (line in Coconut source)
+                tb_cursor_plus_1.tb_next = tb_cursor_minus_1  #82 (line in Coconut source)
+                tb_cursor_plus_1, tb_cursor = (tb_cursor_plus_1, tb_cursor_minus_1)  #83 (line in Coconut source)
+            else:  #87 (line in Coconut source)
+                tb_cursor_plus_1, tb_cursor = (tb_cursor, tb_cursor_minus_1)  #88 (line in Coconut source)
+
+    return new_tb_top  #93 (line in Coconut source)
+
+
+
+def collect_exc_info(exc_type, exc_val, exc_tb):  #96 (line in Coconut source)
+    """Collect information about the given exception for sending to Claude."""  #97 (line in Coconut source)
+    filtered_tb = filter_traceback(exc_tb)  #98 (line in Coconut source)
+
+    frame_info = inspect.getframeinfo(filtered_tb.tb_frame)  #100 (line in Coconut source)
+    source_lines, source_lineno = inspect.getsourcelines(filtered_tb)  #101 (line in Coconut source)
+    pretty_tb = ("\n".join)(traceback.format_exception(exc_type, exc_val, filtered_tb))  #102 (line in Coconut source)
+
+    return DebugContext(name="exception", frame_info=frame_info, source_lines=source_lines, extra_info=_coconut.dict((("traceback", pretty_tb),)))  #104 (line in Coconut source)

@@ -65,11 +65,39 @@ def collect_stack_info(stack_level=1):
     )
 
 
+def filter_traceback(orig_tb):
+    """Filter out traceback frames from claude_here."""
+    new_tb_top = orig_tb
+    while new_tb_top is not None and new_tb_top.tb_frame.f_globals.get("__package__") == "claude_here":
+        new_tb_top = new_tb_top.tb_next
+
+    if new_tb_top is not None:
+        tb_cursor_plus_1 = new_tb_top
+        tb_cursor = tb_cursor_plus_1.tb_next
+        while tb_cursor is not None:
+            tb_cursor_minus_1 = tb_cursor.tb_next
+            if tb_cursor.tb_frame.f_globals.get("__package__") == "claude_here":
+                tb_cursor_plus_1.tb_next = tb_cursor_minus_1
+                tb_cursor_plus_1, tb_cursor = (
+                    tb_cursor_plus_1,
+                    tb_cursor_minus_1,
+                )
+            else:
+                tb_cursor_plus_1, tb_cursor = (
+                    tb_cursor,
+                    tb_cursor_minus_1,
+                )
+
+    return new_tb_top
+
+
 def collect_exc_info(exc_type, exc_val, exc_tb):
     """Collect information about the given exception for sending to Claude."""
-    frame_info = inspect.getframeinfo(exc_tb.tb_frame)
-    source_lines, source_lineno = inspect.getsourcelines(exc_tb)
-    pretty_tb = traceback.format_exception(exc_type, exc_val, exc_tb) |> "\n".join
+    filtered_tb = filter_traceback(exc_tb)
+
+    frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
+    source_lines, source_lineno = inspect.getsourcelines(filtered_tb)
+    pretty_tb = traceback.format_exception(exc_type, exc_val, filtered_tb) |> "\n".join
 
     return DebugContext(
         name="exception",

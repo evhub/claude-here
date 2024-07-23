@@ -4,11 +4,14 @@ from claude_here.debugger import collect_stack_info, collect_exc_info
 from claude_here.launcher import launch_claude
 
 
-def breakpointhook(launch=True):
+DEFAULT_MAX_CONTEXT_ITEMS = 5
+
+
+def breakpointhook(launch=True, max_context_items=DEFAULT_MAX_CONTEXT_ITEMS):
     """Claude breakpoint handler."""
     collect_stack_info(stack_level=2)
     if launch:
-        launch_claude()
+        launch_claude(max_context_items=)
 
 
 EXTRA_RECURSION_LIMIT = 100
@@ -19,7 +22,7 @@ def excepthook(exc_type, exc_val, exc_tb):
     # if we're recovering from a RecursionError, we'll need some extra stack to run collect_exc_info
     sys.setrecursionlimit(sys.getrecursionlimit() + EXTRA_RECURSION_LIMIT)
     collect_exc_info(exc_type, exc_val, exc_tb)
-    launch_claude()
+    launch_claude(max_context_items=DEFAULT_MAX_CONTEXT_ITEMS)
 
 
 def set_claude_here_breakpoint(on=True):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0x13713e0f
+# __coconut_hash__ = 0x92f9a12f
 
 # Compiled with Coconut version 3.1.1-post_dev2
 
@@ -62,38 +62,41 @@ from claude_here.debugger import collect_exc_info  #3 (line in Coconut source)
 from claude_here.launcher import launch_claude  #4 (line in Coconut source)
 
 
-def breakpointhook(launch=True):  #7 (line in Coconut source)
-    """Claude breakpoint handler."""  #8 (line in Coconut source)
-    collect_stack_info(stack_level=2)  #9 (line in Coconut source)
-    if launch:  #10 (line in Coconut source)
-        launch_claude()  #11 (line in Coconut source)
+DEFAULT_MAX_CONTEXT_ITEMS = 5  #7 (line in Coconut source)
+
+
+def breakpointhook(launch=True, max_context_items=DEFAULT_MAX_CONTEXT_ITEMS):  #10 (line in Coconut source)
+    """Claude breakpoint handler."""  #11 (line in Coconut source)
+    collect_stack_info(stack_level=2)  #12 (line in Coconut source)
+    if launch:  #13 (line in Coconut source)
+        launch_claude(max_context_items=max_context_items)  #14 (line in Coconut source)
 
 
 
-EXTRA_RECURSION_LIMIT = 100  #14 (line in Coconut source)
+EXTRA_RECURSION_LIMIT = 100  #17 (line in Coconut source)
 
 
-def excepthook(exc_type, exc_val, exc_tb):  #17 (line in Coconut source)
-    """Claude exception handler."""  #18 (line in Coconut source)
+def excepthook(exc_type, exc_val, exc_tb):  #20 (line in Coconut source)
+    """Claude exception handler."""  #21 (line in Coconut source)
 # if we're recovering from a RecursionError, we'll need some extra stack to run collect_exc_info
-    sys.setrecursionlimit(sys.getrecursionlimit() + EXTRA_RECURSION_LIMIT)  #20 (line in Coconut source)
-    collect_exc_info(exc_type, exc_val, exc_tb)  #21 (line in Coconut source)
-    launch_claude()  #22 (line in Coconut source)
+    sys.setrecursionlimit(sys.getrecursionlimit() + EXTRA_RECURSION_LIMIT)  #23 (line in Coconut source)
+    collect_exc_info(exc_type, exc_val, exc_tb)  #24 (line in Coconut source)
+    launch_claude(max_context_items=DEFAULT_MAX_CONTEXT_ITEMS)  #25 (line in Coconut source)
 
 
 
-def set_claude_here_breakpoint(on=True):  #25 (line in Coconut source)
-    """Set breakpoint() to collect info and launch Claude."""  #26 (line in Coconut source)
-    if on:  #27 (line in Coconut source)
-        sys.breakpointhook = breakpointhook  #28 (line in Coconut source)
-    else:  #29 (line in Coconut source)
-        sys.breakpointhook = sys.__breakpointhook__  #30 (line in Coconut source)
+def set_claude_here_breakpoint(on=True):  #28 (line in Coconut source)
+    """Set breakpoint() to collect info and launch Claude."""  #29 (line in Coconut source)
+    if on:  #30 (line in Coconut source)
+        sys.breakpointhook = breakpointhook  #31 (line in Coconut source)
+    else:  #32 (line in Coconut source)
+        sys.breakpointhook = sys.__breakpointhook__  #33 (line in Coconut source)
 
 
 
-def set_claude_here_excepthook(on=True):  #33 (line in Coconut source)
-    """Configure uncaught exceptions to launch Claude."""  #34 (line in Coconut source)
-    if on:  #35 (line in Coconut source)
-        sys.excepthook = excepthook  #36 (line in Coconut source)
-    else:  #37 (line in Coconut source)
-        sys.excepthook = sys.__excepthook__  #38 (line in Coconut source)
+def set_claude_here_excepthook(on=True):  #36 (line in Coconut source)
+    """Configure uncaught exceptions to launch Claude."""  #37 (line in Coconut source)
+    if on:  #38 (line in Coconut source)
+        sys.excepthook = excepthook  #39 (line in Coconut source)
+    else:  #40 (line in Coconut source)
+        sys.excepthook = sys.__excepthook__  #41 (line in Coconut source)
