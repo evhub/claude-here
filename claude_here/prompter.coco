@@ -8,11 +8,9 @@ import os
 #     - The traceback if it's from an exception.
 #     - The locals and globals if it's from a breakpoint.
 
-BASE_PROMPT = """Your task is to analyze the provided source code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions.
+BASE_PROMPT = """Your task is to follow the attached instructions, which should involve analyzing the attached Python code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. Remember to be thorough in your analysis, clear in your explanations, helpful in your suggestions, and to use Markdown to format your response."""
 
-You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help; any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help. It is expected that `claude_here` will be imported and not used.
-
-Carefully examine the attached source code, breakpoint contexts, and/or unhandled exceptions. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
+POSTAMBLE = """Make sure to carefully examine the above source code, breakpoint contexts, and/or unhandled exceptions. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
 
 1. Analyze the source code:
    - Look for syntax errors, logical errors, or potential issues in the code structure.
@@ -37,9 +35,9 @@ Carefully examine the attached source code, breakpoint contexts, and/or unhandle
    - Summarize the identified issues and their locations in the code.
    - List your debugging suggestions in a clear and organized manner.
    - If relevant, include small code snippets to illustrate your suggestions.
-   - Format your response using Markdown.
+   - Format your response using Markdown."""
 
-Remember to be thorough in your analysis, clear in your explanations, and helpful in your suggestions. Your goal is to assist the user in resolving their Python code issues effectively."""
+README_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "README.md")
 
 
 data Markdown(str(code))
@@ -48,7 +46,7 @@ data SeparatedBy(str(sep), list(objs))
 
 case def assemble_prompt:
     """Assemble a concrete prompt from the given structured prompt data."""
-    case(str(content)) = content
+    case(str(content)) = content.rstrip()
 
     case(list(objs)) =
         assemble_prompt(SeparatedBy("\n", objs))
@@ -63,12 +61,17 @@ case def assemble_prompt:
         f"<{tag}>\n{assemble_prompt(content)}\n</{tag}>"
 
     case(Markdown(code)) =
-        f"\n```python\n{code.rstrip()}\n```\n"
+        f"\n```python\n{assemble_prompt(code)}\n```\n"
 
 
 def generate_prompt(all_debug_context, max_context_items):
     """Generate a full prompt and attachment for Claude using the given debug context."""
-    prompt_cmpts = []
+    prompt_cmpts = ["""You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help. To help you understand the context of how `claude_here` works, here is the full `claude_here` README:"""]
+    # The most important bits are that any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help. It is expected that `claude_here` will be imported and not used.
+    with open(README_FILE, "r") as readme_file:
+        prompt_cmpts += [{"claude_here_readme.md": readme_file.read()}]
+
+    prompt_cmpts += ["""Your goal is to assist the user in resolving their Python code issues effectively. Here is the information that you will be working with:"""]
 
     for filepath, debug_contexts in all_debug_context.items():
         coconut_filepath = os.path.splitext(filepath)[0] + ".coco"
@@ -97,6 +100,8 @@ def generate_prompt(all_debug_context, max_context_items):
             file_prompt_cmpts += [{ctx.name: info_dict}]
 
         prompt_cmpts += [{filename: file_prompt_cmpts |> SeparatedBy$("\n\n")}]
+
+    prompt_cmpts += [POSTAMBLE]
 
     attachment = assemble_prompt(prompt_cmpts |> SeparatedBy$("\n\n"))
     return (prompt=BASE_PROMPT, attachment=attachment)

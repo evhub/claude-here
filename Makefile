@@ -2,6 +2,10 @@
 test: install
 	pytest --strict-markers -s ./claude_here/tests.py
 
+.PHONY: launch-fib
+launch-fib: install
+	python ./claude_here/test_files/fib_test.py
+
 .PHONY: install
 install: build
 	python -m pip install -Ue .
