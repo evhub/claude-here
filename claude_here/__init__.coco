@@ -15,7 +15,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import inspect
+
+from claude_here.debugger import fixpath, include_file
 from claude_here.main import set_claude_here_breakpoint, set_claude_here_excepthook
 
+
+def get_importer_path():
+    """Get the path to the file that imported claude_here."""
+    for frame_info in inspect.stack():
+        filename = fixpath(frame_info.filename)
+        if filename != fixpath(__file__) and "<frozen" not in filename:
+            return filename
+    return None
+
+
+def include_importer():
+    """Make sure Claude sees the file in which claude_here was imported."""
+    importer_path = get_importer_path()
+    if importer_path is not None:
+        include_file(importer_path)
+
+
+include_importer()
 set_claude_here_breakpoint()
 set_claude_here_excepthook()

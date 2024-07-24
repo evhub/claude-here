@@ -1,3 +1,4 @@
+import os
 import inspect
 import traceback
 import builtins
@@ -10,6 +11,16 @@ ALL_DEBUG_CONTEXT = defaultdict(list)
 reset = ALL_DEBUG_CONTEXT.clear
 
 
+def fixpath(path):
+    """Uniformly format a path."""
+    return os.path.normpath(os.path.realpath(os.path.expanduser(path)))
+
+
+def include_file(filepath):
+    """Ensure that the given filepath is included in the context sent to Claude."""
+    ALL_DEBUG_CONTEXT[fixpath(filepath)]
+
+
 data DebugContext(
     name: str,
     frame_info,
@@ -20,7 +31,7 @@ data DebugContext(
     def __init__(self, *args, **kwargs):
         ALL_DEBUG_CONTEXT[self.filename].append(self)
     @property
-    def filename(self) = self.frame_info.filename
+    def filename(self) = fixpath(self.frame_info.filename)
     @property
     def lineno(self) = self.frame_info.lineno
     @property
