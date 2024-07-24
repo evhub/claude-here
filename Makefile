@@ -1,7 +1,6 @@
 .PHONY: test
-test: export CLAUDE_HERE_DRY_RUN=TRUE
 test: install
-	python ./claude_here/test_files/fib_test.py
+	pytest --strict-markers -s ./claude_here/tests.py
 
 .PHONY: install
 install: build
@@ -13,26 +12,25 @@ force-install: force-build
 
 .PHONY: setup
 setup:
-	python -m pip install -U setuptools wheel pip coconut-develop[watch]
+	python -m pip install -U pip setuptools wheel twine importlib_metadata build pytest coconut-develop[watch]
 
 .PHONY: unclean-build
-unclean-build:
+unclean-build: setup
 	coconut claude_here --target 3 --no-tco --strict
 
 .PHONY: build
 build: clean unclean-build
 
 .PHONY: force-build
-force-build: clean
+force-build: setup clean
 	coconut claude_here --force --target 3 --no-tco --strict
 
 .PHONY: package
-package:
-	python -m pip install -U pip setuptools wheel twine importlib_metadata build
+package: install
 	python -m build
 
 .PHONY: upload
-upload: install package
+upload: package
 	python -m twine upload dist/*
 
 .PHONY: clean

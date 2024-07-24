@@ -7,6 +7,9 @@ from collections import defaultdict
 ALL_DEBUG_CONTEXT = defaultdict(list)
 
 
+reset = ALL_DEBUG_CONTEXT.clear
+
+
 data DebugContext(
     name: str,
     frame_info,
