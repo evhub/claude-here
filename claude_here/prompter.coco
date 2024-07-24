@@ -97,11 +97,12 @@ def generate_prompt(all_debug_context, max_context_items):
                 else:
                     info_dict["surrounding_code"] = ctx.raw_source
                 seen_code.add(ctx.raw_source)
-            info_dict |= {
-                "executing_function": ctx.function,
-                "executing_line": ctx.raw_context,
-                "line_number": ctx.lineno |> str,
-            }
+            if ctx.function is not None:
+                info_dict["executing_function"] = ctx.function
+            if ctx.raw_context:
+                info_dict["executing_line"] = ctx.raw_context
+            if ctx.lineno is not None:
+                info_dict["line_number"] = ctx.lineno |> str
             info_dict |= ctx.extra_info
             file_prompt_cmpts += [{ctx.name: info_dict}]
 

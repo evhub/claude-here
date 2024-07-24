@@ -34,15 +34,15 @@ data DebugContext(
     def __init__(self, *args, **kwargs):
         ALL_DEBUG_CONTEXT[self.filename].append(self)
     @property
-    def filename(self) = fixpath(self.frame_info.filename)
+    def filename(self) = fixpath(self.frame_info?.filename ?? os.path.join(os.getcwd(), "<stdin>"))
     @property
-    def lineno(self) = self.frame_info.lineno
+    def lineno(self) = self.frame_info?.lineno
     @property
-    def function(self) = self.frame_info.function
+    def function(self) = self.frame_info?.function
     @property
-    def context_lines(self) = self.frame_info.code_context
+    def context_lines(self) = self.frame_info?.code_context
     @property
-    def context_index(self) = self.frame_info.index
+    def context_index(self) = self.frame_info?.index
     @property
     def raw_context(self) = "".join(self.context_lines) if self.context_lines else ""
 
@@ -121,10 +121,15 @@ def filter_traceback(orig_tb):
 
 def collect_exc_info(exc_type, exc_val, exc_tb):
     """Collect information about the given exception for sending to Claude."""
-    filtered_tb = filter_traceback(exc_tb)
+    filtered_tb = filter_traceback(exc_tb) ?? exc_tb
 
-    frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
-    source_type, raw_source = get_source(filtered_tb)
+    if filtered_tb is None:
+        frame_info = source_type = None
+        raw_source = ""
+    else:
+        frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
+        source_type, raw_source = get_source(filtered_tb.tb_frame)
+
     pretty_tb = (
         traceback.format_exception(exc_type, exc_val, filtered_tb)
         |> "".join
