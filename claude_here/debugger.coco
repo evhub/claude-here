@@ -41,7 +41,7 @@ data DebugContext(
     @property
     def context_index(self) = self.frame_info.index
     @property
-    def raw_context(self) = "".join(self.context_lines)
+    def raw_context(self) = "".join(self.context_lines) if self.context_lines else ""
     @property
     def raw_source(self) = "".join(self.source_lines)
 

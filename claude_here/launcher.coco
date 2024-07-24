@@ -1,6 +1,7 @@
 import os
 import urllib
 import webbrowser
+import traceback
 from warnings import warn
 
 from claude_here.debugger import ALL_DEBUG_CONTEXT
@@ -43,6 +44,9 @@ def launch_claude(project_id=None, max_context_items=None, open_browser=None, dr
             + (f"&project={urllib.parse.quote_plus(project_id)}" if project_id else "")
         )
         if open_browser:
-            webbrowser.open(url)
-        else:
-            print(f"\e]8;;{url}\e\\Cmd+click here to open Claude!\e]8;;\e\\\n")
+            try:
+                webbrowser.open(url)
+            except ValueError:
+                traceback.print_exc()
+                open_browser = False
+        print(f"\e]8;;{url}\e\\Cmd+click here to open Claude!\e]8;;\e\\\n")
