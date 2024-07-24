@@ -166,4 +166,4 @@ __coconut_cache__/
 
 # Python files
 *.py
-!test_file.py
+!claude_here/test_files/*
