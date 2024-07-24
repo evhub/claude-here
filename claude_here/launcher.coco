@@ -50,4 +50,4 @@ def launch_claude(project_id=None, max_context_items=None, open_browser=None, dr
                 traceback.print_exc()
                 open_browser = False
         if not open_browser:
-            print(f"\e]8;;{url}\e\\Cmd+click here to open Claude!\e]8;;\e\\\n")
+            print(f"\x1b]8;;{url}\x1b\\Cmd+click here to open Claude!\x1b]8;;\x1b\\\n")
