@@ -77,13 +77,14 @@ def generate_prompt(all_debug_context, max_context_items):
         coconut_filepath = os.path.splitext(filepath)[0] + ".coco"
         if os.path.exists(coconut_filepath):
             filepath = coconut_filepath
-
-        with open(filepath, "r") as fobj:
-            source_code = fobj.read()
         filename = os.path.basename(filepath)
-        file_prompt_cmpts = [
-            {"source_code": source_code},
-        ]
+
+        if os.path.isfile(filepath):
+            with open(filepath, "r") as fobj:
+                source_code = fobj.read()
+            file_prompt_cmpts = [
+                {"source_code": source_code},
+            ]
 
         seen_code = {source_code}
         for ctx in debug_contexts$[-max_context_items:]:
