@@ -79,18 +79,18 @@ def generate_prompt(all_debug_context, max_context_items):
             source_code = fobj.read()
         filename = os.path.basename(filepath)
         file_prompt_cmpts = [
-            {"source_code": Markdown(source_code)},
+            {"source_code": source_code},
         ]
 
         seen_code = {source_code}
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {}
             if ctx.raw_source not in seen_code:
-                info_dict["surrounding_code"] = ctx.raw_source |> Markdown
+                info_dict["surrounding_code"] = ctx.raw_source
                 seen_code.add(ctx.raw_source)
             info_dict |= {
                 "executing_function": ctx.function,
-                "executing_line": ctx.raw_context |> Markdown,
+                "executing_line": ctx.raw_context,
                 "line_number": ctx.lineno |> str,
             }
             info_dict |= ctx.extra_info
