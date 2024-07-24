@@ -23,9 +23,10 @@ def get_bool_env_var(env_var, default=None):
 DEFAULT_MAX_CONTEXT_ITEMS = 10
 
 
-def launch_claude(max_context_items=DEFAULT_MAX_CONTEXT_ITEMS, project_id=None, dry_run=None):
+def launch_claude(project_id=None, max_context_items=None, dry_run=None):
     """Launch claude.ai with all the collected debug context."""
     project_id ??= os.getenv("CLAUDE_HERE_PROJECT_ID", None)
+    max_context_items ??= os.getenv("CLAUDE_HERE_MAX_CONTEXT_ITEMS", DEFAULT_MAX_CONTEXT_ITEMS) |> int
     dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
 
     tuple(prompt=prompt, attachment=attachment) = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)

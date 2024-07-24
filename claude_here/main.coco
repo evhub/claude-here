@@ -5,12 +5,15 @@ from claude_here.debugger import collect_stack_info, collect_exc_info
 from claude_here.launcher import launch_claude
 
 
-def breakpointhook(just_gather_info=False, **kwargs):
+def breakpointhook(just_gather_info=False, base_debugger=sys.__breakpointhook__, **kwargs):
     """Claude breakpoint handler."""
     collect_stack_info(stack_level=2)
     if not just_gather_info:
         launch_claude(**kwargs)
-        input("Press Enter when you're done talking with Claude to continue to the next breakpoint.")
+        if base_debugger is None:
+            input("Press Enter when you're done talking with Claude to continue to the next breakpoint.")
+        elif base_debugger:
+            base_debugger()
 
 
 EXTRA_RECURSION_LIMIT = 100
