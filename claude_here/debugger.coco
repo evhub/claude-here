@@ -1,7 +1,9 @@
 import os
+import io
 import inspect
 import traceback
 import builtins
+from dis import dis
 from collections import defaultdict
 
 
@@ -24,7 +26,8 @@ def include_file(filepath):
 data DebugContext(
     name: str,
     frame_info,
-    source_lines: str[],
+    source_type: str?,
+    raw_source: str,
     extra_info: dict[str, str],
 ):
     """Collection of information gathered about a debug event."""
@@ -42,8 +45,6 @@ data DebugContext(
     def context_index(self) = self.frame_info.index
     @property
     def raw_context(self) = "".join(self.context_lines) if self.context_lines else ""
-    @property
-    def raw_source(self) = "".join(self.source_lines)
 
 
 IGNORED_VARS = set(dir(builtins)) | {"claude_here"}
@@ -55,13 +56,17 @@ def format_vars(vardict) = {
 } |> repr
 
 
-def get_source_lines(frame):
-    """Extract the source code lines from frame."""
+def get_source(frame):
+    """Extract the source code from frame."""
     try:
         source_lines, source_lineno = inspect.getsourcelines(frame)
     except OSError:
-        source_lines = []
-    return source_lines
+        fake_file = io.StringIO()
+        dis(frame.f_code, file=fake_file)
+        fake_file.seek(0)
+        return (source_type="dis", raw_source=fake_file.read())
+    else:
+        return (source_type=None, raw_source="".join(source_lines))
 
 
 def collect_stack_info(stack_level=1):
@@ -74,12 +79,13 @@ def collect_stack_info(stack_level=1):
     )
 
     frame_info = inspect.getframeinfo(outer_frame)
-    source_lines = get_source_lines(outer_frame)
+    source_type, raw_source = get_source(outer_frame)
 
     return DebugContext(
         name="breakpoint",
         frame_info=,
-        source_lines=,
+        source_type=,
+        raw_source=,
         extra_info={
             "locals": format_vars(outer_frame.f_locals),
             "globals": format_vars(outer_frame.f_globals),
@@ -118,7 +124,7 @@ def collect_exc_info(exc_type, exc_val, exc_tb):
     filtered_tb = filter_traceback(exc_tb)
 
     frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
-    source_lines = get_source_lines(filtered_tb)
+    source_type, raw_source = get_source(filtered_tb)
     pretty_tb = (
         traceback.format_exception(exc_type, exc_val, filtered_tb)
         |> "".join
@@ -127,7 +133,8 @@ def collect_exc_info(exc_type, exc_val, exc_tb):
     return DebugContext(
         name="exception",
         frame_info=frame_info,
-        source_lines=,
+        source_type=,
+        raw_source=,
         extra_info={
             "traceback": pretty_tb,
         }

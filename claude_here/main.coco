@@ -1,5 +1,4 @@
 import sys
-import traceback
 
 from claude_here.debugger import collect_stack_info, collect_exc_info
 from claude_here.launcher import launch_claude
@@ -24,10 +23,10 @@ def excepthook(exc_type, exc_val, exc_tb):
     """Claude exception handler."""
     # if we're recovering from a RecursionError, we'll need some extra stack
     sys.setrecursionlimit(sys.getrecursionlimit() + EXTRA_RECURSION_LIMIT)
-    traceback.print_exception(exc_type, exc_val, exc_tb)
     if getattr(exc_type, "__module__", "") not in IGNORE_EXCEPTIONS_FROM:
         collect_exc_info(exc_type, exc_val, exc_tb)
         launch_claude()
+    sys.__excepthook__(exc_type, exc_val, exc_tb)
 
 
 def set_claude_here_breakpoint(on=True):

@@ -92,7 +92,10 @@ def generate_prompt(all_debug_context, max_context_items):
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {}
             if ctx.raw_source not in seen_code:
-                info_dict["surrounding_code"] = ctx.raw_source
+                if ctx.source_type is not None:
+                    info_dict["surrounding_code"] = {ctx.source_type: ctx.raw_source}
+                else:
+                    info_dict["surrounding_code"] = ctx.raw_source
                 seen_code.add(ctx.raw_source)
             info_dict |= {
                 "executing_function": ctx.function,
