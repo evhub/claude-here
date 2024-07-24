@@ -79,14 +79,15 @@ def generate_prompt(all_debug_context, max_context_items):
             filepath = coconut_filepath
         filename = os.path.basename(filepath)
 
+        seen_code = s{}
         if os.path.isfile(filepath):
             with open(filepath, "r") as fobj:
                 source_code = fobj.read()
             file_prompt_cmpts = [
                 {"source_code": source_code},
             ]
+            seen_code.add(source_code)
 
-        seen_code = {source_code}
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {}
             if ctx.raw_source not in seen_code:

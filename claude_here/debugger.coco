@@ -55,6 +55,15 @@ def format_vars(vardict) = {
 } |> repr
 
 
+def get_source_lines(frame):
+    """Extract the source code lines from frame."""
+    try:
+        source_lines, source_lineno = inspect.getsourcelines(frame)
+    except OSError:
+        source_lines = []
+    return source_lines
+
+
 def collect_stack_info(stack_level=1):
     """Collect information about the callee site for sending to Claude."""
     cur_frame = inspect.currentframe()
@@ -65,10 +74,7 @@ def collect_stack_info(stack_level=1):
     )
 
     frame_info = inspect.getframeinfo(outer_frame)
-    try:
-        source_lines, source_lineno = inspect.getsourcelines(outer_frame)
-    except OSError:
-        source_lines = []
+    source_lines = get_source_lines(outer_frame)
 
     return DebugContext(
         name="breakpoint",
@@ -112,11 +118,10 @@ def collect_exc_info(exc_type, exc_val, exc_tb):
     filtered_tb = filter_traceback(exc_tb)
 
     frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
-    source_lines, source_lineno = inspect.getsourcelines(filtered_tb)
+    source_lines = get_source_lines(filtered_tb)
     pretty_tb = (
         traceback.format_exception(exc_type, exc_val, filtered_tb)
         |> "".join
-        |> .rstrip()
     )
 
     return DebugContext(
