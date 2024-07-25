@@ -3,19 +3,17 @@ import io
 import inspect
 import traceback
 import builtins
+import random
 from dis import dis
 from collections import defaultdict
+
+from claude_here.util import fixpath, get_verbosity
 
 
 ALL_DEBUG_CONTEXT = defaultdict(list)
 
 
 reset = ALL_DEBUG_CONTEXT.clear
-
-
-def fixpath(path):
-    """Uniformly format a path."""
-    return os.path.normpath(os.path.realpath(os.path.expanduser(path)))
 
 
 def include_file(filepath):
@@ -50,10 +48,31 @@ data DebugContext(
 IGNORED_VARS = set(dir(builtins)) | {"claude_here"}
 
 
-def format_vars(vardict) = {
-    name: val for name, val in vardict.items()
-    if not name.startswith("__") and name not in IGNORED_VARS
-} |> repr
+def format_vars(vardict, max_size=float("inf"), max_len=float("inf")):
+    """Format the given locals or globals for sending to Claude."""
+    filtered_vars = {
+        name: val for name, val in vardict.items()
+        if not name.startswith(("__", "@", ".")) and name not in IGNORED_VARS
+    }
+
+    truncated = False
+    if len(filtered_vars) > max_size:
+        filtered_vars = (
+            filtered_vars
+            |> .items()
+            |> tuple
+            |> random.sample$(?, max_size)
+            |> dict
+        )
+        truncated = True
+
+    var_repr = repr(filtered_vars)
+    if len(var_repr) > max_len:
+        var_repr |>= .[:max_len]
+
+    if truncated:
+        var_repr = var_repr.removesuffix("}") + ", <remainder truncated>}"
+    return var_repr
 
 
 def get_source(frame):
@@ -77,26 +96,33 @@ def collect_stack_info(stack_level=1):
         range(stack_level),
         cur_frame,
     )
+    return collect_frame_info("breakpoint", outer_frame)
 
-    frame_info = inspect.getframeinfo(outer_frame)
-    source_type, raw_source = get_source(outer_frame)
+
+def collect_frame_info(debug_context_name, frame, extra_info=None):
+    """Collect information about the given frame for sending to Claude."""
+    frame_info = inspect.getframeinfo(frame)
+    source_type, raw_source = get_source(frame)
 
     return DebugContext(
-        name="breakpoint",
+        name=debug_context_name,
         frame_info=,
         source_type=,
         raw_source=,
-        extra_info={
-            "locals": format_vars(outer_frame.f_locals),
-            "globals": format_vars(outer_frame.f_globals),
+        extra_info=(extra_info ?? {}) | {
+            "locals": format_vars(frame.f_locals, max_size=get_verbosity()*50, max_len=get_verbosity()*1000),
+            "globals": format_vars(frame.f_globals, max_size=get_verbosity()*5, max_len=get_verbosity()*100),
         }
     )
+
+
+IGNORE_PACKAGES = {"claude_here", "builtins", "importlib"}
 
 
 def filter_traceback(orig_tb):
     """Filter out traceback frames from claude_here."""
     new_tb_top = orig_tb
-    while new_tb_top is not None and new_tb_top.tb_frame.f_globals.get("__package__") == "claude_here":
+    while new_tb_top is not None and new_tb_top.tb_frame.f_globals.get("__package__") in IGNORE_PACKAGES:
         new_tb_top = new_tb_top.tb_next
 
     if new_tb_top is not None:
@@ -104,7 +130,7 @@ def filter_traceback(orig_tb):
         tb_cursor = tb_cursor_plus_1.tb_next
         while tb_cursor is not None:
             tb_cursor_minus_1 = tb_cursor.tb_next
-            if tb_cursor.tb_frame.f_globals.get("__package__") == "claude_here":
+            if tb_cursor.tb_frame.f_globals.get("__package__") in IGNORE_PACKAGES:
                 tb_cursor_plus_1.tb_next = tb_cursor_minus_1
                 tb_cursor_plus_1, tb_cursor = (
                     tb_cursor_plus_1,
@@ -119,28 +145,37 @@ def filter_traceback(orig_tb):
     return new_tb_top
 
 
+def get_tb_frames(tb):
+    """Yield all the frames in the given traceback."""
+    while tb is not None:
+        yield tb.tb_frame
+        tb |>= .tb_next
+
+
 def collect_exc_info(exc_type, exc_val, exc_tb):
     """Collect information about the given exception for sending to Claude."""
     filtered_tb = filter_traceback(exc_tb) ?? exc_tb
 
+    extra_info = {
+        "traceback": (
+            traceback.format_exception(exc_type, exc_val, filtered_tb)
+            |> "".join
+        ),
+    }
+
     if filtered_tb is None:
-        frame_info = source_type = None
-        raw_source = ""
+        return DebugContext(
+            name="exception",
+            frame_info=None,
+            source_type=None,
+            raw_source="",
+            extra_info=,
+        )
+
     else:
-        frame_info = inspect.getframeinfo(filtered_tb.tb_frame)
-        source_type, raw_source = get_source(filtered_tb.tb_frame)
+        all_frames = filtered_tb |> get_tb_frames |> tuple
+        verbosity = get_verbosity()
+        for frame in all_frames[:verbosity//2] + all_frames[-(1 + verbosity//2):-1]:
+            collect_frame_info("exception_frame", frame)
 
-    pretty_tb = (
-        traceback.format_exception(exc_type, exc_val, filtered_tb)
-        |> "".join
-    )
-
-    return DebugContext(
-        name="exception",
-        frame_info=frame_info,
-        source_type=,
-        raw_source=,
-        extra_info={
-            "traceback": pretty_tb,
-        }
-    )
+        return collect_frame_info("exception", all_frames[-1], extra_info)

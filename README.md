@@ -36,4 +36,4 @@ Some extra features to note:
 
 `claude_here` supports some additional configuration via environment variables:
 - `CLAUDE_HERE_PROJECT_ID` can be set to a [Claude Projects](https://claude.ai/projects) UUID (`https://claude.ai/project/<this-part-here-is-the-uuid>`) to launch your debugging conversations in.
-- `CLAUDE_HERE_MAX_CONTEXT_ITEMS` can be set to an integer that will determine the maximum number of prior `breakpoint` contexts that will be sent to Claude.
+- `CLAUDE_HERE_VERBOSITY` can be set to a positive integer that will determine how much information to send to Claude; the larger the value the more info is sent to Claude. Defaults to `10`.

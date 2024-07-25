@@ -17,7 +17,8 @@ limitations under the License.
 
 import inspect
 
-from claude_here.debugger import fixpath, include_file
+from claude_here.util import fixpath
+from claude_here.debugger import include_file
 from claude_here.main import set_claude_here_breakpoint, set_claude_here_excepthook
 
 

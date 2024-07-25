@@ -2,37 +2,22 @@ import os
 import urllib
 import webbrowser
 import traceback
-from warnings import warn
 
+from claude_here.util import get_bool_env_var, get_verbosity
 from claude_here.debugger import ALL_DEBUG_CONTEXT
 from claude_here.prompter import generate_prompt
 
 
-def get_bool_env_var(env_var, default=None):
-    """Get a boolean from an environment variable."""
-    boolstr = os.getenv(env_var, "").lower()
-    if boolstr in ("true", "yes", "on", "1", "t"):
-        return True
-    elif boolstr in ("false", "no", "off", "0", "f"):
-        return False
-    else:
-        if boolstr not in ("", "none", "default"):
-            warn(f"{env_var} has invalid value {os.getenv(env_var)!r} (defaulting to {default})")
-        return default
-
-
-DEFAULT_MAX_CONTEXT_ITEMS = 10
 TEXT_BASED_BROWSERS = {"www-browser", "w3m", "elinks", "lynx"}
 
 
-def launch_claude(project_id=None, max_context_items=None, open_browser=None, dry_run=None):
+def launch_claude(project_id=None, open_browser=None, dry_run=None):
     """Launch claude.ai with all the collected debug context."""
     project_id ??= os.getenv("CLAUDE_HERE_PROJECT_ID", None)
-    max_context_items ??= os.getenv("CLAUDE_HERE_MAX_CONTEXT_ITEMS", DEFAULT_MAX_CONTEXT_ITEMS) |> int
     open_browser ??= get_bool_env_var("CLAUDE_HERE_OPEN_BROWSER", webbrowser.get().name not in TEXT_BASED_BROWSERS)
     dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
 
-    tuple(prompt=prompt, attachment=attachment) = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=)
+    prompt, attachment = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=get_verbosity()*2)
     if dry_run:
         print(prompt)
         if attachment:

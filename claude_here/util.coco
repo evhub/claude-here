@@ -1,0 +1,42 @@
+import os
+import sys
+from warnings import warn
+
+
+def fixpath(path) =
+    """Uniformly format a path."""
+    os.path.normpath(os.path.realpath(os.path.expanduser(path)))
+
+
+def (fixpath -> check_path) `lives_in` (fixpath -> base_dir) =
+    """Determine if check_path lives inside of base_dir."""
+    os.path.commonpath([base_dir, check_path]) == base_dir
+
+
+def in_stdlib(filepath):
+    """Determine if the given filepath is in the Python standard library."""
+    python_dir = os.path.dirname(sys.executable)
+    lib_dir = os.path.join(python_dir, "Lib")
+    site_packages = os.path.join(lib_dir, "site-packages")
+    return filepath `lives_in` lib_dir and not filepath `lives_in` site_packages
+
+
+def get_bool_env_var(env_var, default=None):
+    """Get a boolean from an environment variable."""
+    boolstr = os.getenv(env_var, "").lower()
+    if boolstr in ("true", "yes", "on", "1", "t"):
+        return True
+    elif boolstr in ("false", "no", "off", "0", "f"):
+        return False
+    else:
+        if boolstr not in ("", "none", "default"):
+            warn(f"{env_var} has invalid value {os.getenv(env_var)!r} (defaulting to {default})")
+        return default
+
+
+DEFAULT_VERBOSITY = 10
+
+
+def get_verbosity() =
+    """Get the verbosity level to use in determining how much info to send to Claude."""
+    os.getenv("CLAUDE_HERE_VERBOSITY", DEFAULT_VERBOSITY) |> int

@@ -1,5 +1,7 @@
 import os
 
+from claude_here.util import in_stdlib
+
 
 # META PROMPT:
 # The task is for Claude to act as an assistant in debugging Python code. The application will automatically collect information about the currently running environment and send that to Claude to help debug upon encountering an exception or breakpoint. The information available is:
@@ -81,7 +83,7 @@ def generate_prompt(all_debug_context, max_context_items):
 
         file_prompt_cmpts = []
         seen_code = s{""}
-        if os.path.isfile(filepath):
+        if os.path.isfile(filepath) and not in_stdlib(filepath):
             with open(filepath, "r") as fobj:
                 source_code = fobj.read()
             file_prompt_cmpts += [
