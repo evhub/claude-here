@@ -4,15 +4,18 @@ from claude_here.debugger import collect_stack_info, collect_exc_info
 from claude_here.launcher import launch_claude
 
 
-def breakpointhook(just_gather_info=False, base_debugger=sys.__breakpointhook__, **kwargs):
+BASE_HOOKS = {
+    "breakpointhook": sys.__breakpointhook__,
+    "excepthook": sys.__excepthook__,
+}
+
+
+def breakpointhook(just_gather_info=False, base_debugger=None, **kwargs):
     """Claude breakpoint handler."""
     collect_stack_info(stack_level=2)
     if not just_gather_info:
         launch_claude(**kwargs)
-        if base_debugger is None:
-            input("Press Enter when you're done talking with Claude to continue to the next breakpoint.")
-        elif base_debugger:
-            base_debugger()
+        (base_debugger ?? BASE_HOOKS["breakpointhook"])()
 
 
 EXTRA_RECURSION_LIMIT = 100
@@ -23,23 +26,27 @@ def excepthook(exc_type, exc_val, exc_tb):
     """Claude exception handler."""
     # if we're recovering from a RecursionError, we'll need some extra stack
     sys.setrecursionlimit(sys.getrecursionlimit() + EXTRA_RECURSION_LIMIT)
-    if getattr(exc_type, "__module__", "") not in IGNORE_EXCEPTIONS_FROM:
-        collect_exc_info(exc_type, exc_val, exc_tb)
-        launch_claude()
-    sys.__excepthook__(exc_type, exc_val, exc_tb)
+    try:
+        BASE_HOOKS["excepthook"](exc_type, exc_val, exc_tb)
+    finally:
+        if getattr(exc_type, "__module__", "") not in IGNORE_EXCEPTIONS_FROM:
+            collect_exc_info(exc_type, exc_val, exc_tb)
+            launch_claude()
 
 
 def set_claude_here_breakpoint(on=True):
     """Set breakpoint() to collect info and launch Claude."""
     if on:
-        sys.breakpointhook = breakpointhook
+        if sys.breakpointhook is not breakpointhook:
+            BASE_HOOKS["breakpointhook"], sys.breakpointhook = sys.breakpointhook, breakpointhook
     else:
-        sys.breakpointhook = sys.__breakpointhook__
+        sys.breakpointhook = BASE_HOOKS["breakpointhook"]
 
 
 def set_claude_here_excepthook(on=True):
     """Configure uncaught exceptions to launch Claude."""
     if on:
-        sys.excepthook = excepthook
+        if sys.excepthook is not excepthook:
+            BASE_HOOKS["excepthook"], sys.excepthook = sys.excepthook, excepthook
     else:
-        sys.excepthook = sys.__excepthook__
+        sys.excepthook = BASE_HOOKS["excepthook"]

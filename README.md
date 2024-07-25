@@ -29,7 +29,7 @@ Some extra features to note:
 ### `breakpoint`
 
 `breakpoint` additionally supports some optional arguments:
-- `base_debugger` determines the debugger to call in addition to launching Claude. Defaults to [`pdb.set_trace`](https://docs.python.org/3/library/pdb.html). Setting to `None` will set up a simple prompt to ask you when you're ready to continue execution.
+- `base_debugger` determines the debugger to call in addition to launching Claude. Defaults to [`pdb.set_trace`](https://docs.python.org/3/library/pdb.html).
 - `just_gather_info=True` will gather information to send to Claude later (on an uncaught exception or `breakpoint` without `just_gather_info=True`) without actually launching Claude or the `base_debugger`.
 
 ### environment variables

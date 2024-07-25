@@ -20,14 +20,14 @@ setup:
 
 .PHONY: unclean-build
 unclean-build: setup
-	coconut claude_here --target 3 --no-tco --strict
+	coconut claude_here --target 3.9 --no-tco --strict
 
 .PHONY: build
 build: clean unclean-build
 
 .PHONY: force-build
 force-build: setup clean
-	coconut claude_here --force --target 3 --no-tco --strict
+	coconut claude_here --force --target 3.9 --no-tco --strict
 
 .PHONY: package
 package: install
