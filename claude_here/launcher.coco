@@ -11,10 +11,18 @@ from claude_here.prompter import generate_prompt
 TEXT_BASED_BROWSERS = {"www-browser", "w3m", "elinks", "lynx"}
 
 
+def has_graphical_browser():
+    """Determine if the environment has a graphical browser."""
+    try:
+        return webbrowser.get().name not in TEXT_BASED_BROWSERS
+    except webbrowser.Error, ValueError:
+        return False
+
+
 def launch_claude(project_id=None, open_browser=None, dry_run=None):
     """Launch claude.ai with all the collected debug context."""
     project_id ??= os.getenv("CLAUDE_HERE_PROJECT_ID", None)
-    open_browser ??= get_bool_env_var("CLAUDE_HERE_OPEN_BROWSER", webbrowser.get().name not in TEXT_BASED_BROWSERS)
+    open_browser ??= get_bool_env_var("CLAUDE_HERE_OPEN_BROWSER", has_graphical_browser())
     dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
 
     prompt, attachment = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=get_verbosity()*2)
