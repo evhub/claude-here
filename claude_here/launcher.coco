@@ -31,7 +31,7 @@ def launch_claude(project_id=None, open_browser=None, dry_run=None):
         if open_browser:
             try:
                 webbrowser.open(url)
-            except ValueError:
+            except webbrowser.Error, ValueError:
                 traceback.print_exc()
                 open_browser = False
         if not open_browser:
