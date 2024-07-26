@@ -16,7 +16,7 @@ force-install: force-build
 
 .PHONY: setup
 setup:
-	python -m pip install -U pip setuptools wheel twine importlib_metadata build pytest coconut-develop[watch]
+	python -m pip install -U pip setuptools wheel pytest coconut-develop[watch]
 
 .PHONY: unclean-build
 unclean-build: setup
@@ -31,6 +31,7 @@ force-build: setup clean
 
 .PHONY: package
 package: install
+	python -m pip install -U pip setuptools wheel twine importlib_metadata build
 	python -m build
 
 .PHONY: upload
