@@ -104,14 +104,15 @@ def collect_frame_info(debug_context_name, frame, extra_info=None):
     frame_info = inspect.getframeinfo(frame)
     source_type, raw_source = get_source(frame)
 
+    verbosity = get_verbosity()
     return DebugContext(
         name=debug_context_name,
         frame_info=,
         source_type=,
         raw_source=,
         extra_info=(extra_info ?? {}) | {
-            "locals": format_vars(frame.f_locals, max_size=get_verbosity()*50, max_len=get_verbosity()*1000),
-            "globals": format_vars(frame.f_globals, max_size=get_verbosity()*5, max_len=get_verbosity()*100),
+            "locals": format_vars(frame.f_locals, max_size=verbosity*50, max_len=verbosity*1000),
+            "globals": format_vars(frame.f_globals, max_size=verbosity*5, max_len=verbosity*100),
         }
     )
 

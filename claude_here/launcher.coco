@@ -25,7 +25,7 @@ def launch_claude(project_id=None, open_browser=None, dry_run=None):
     open_browser ??= get_bool_env_var("CLAUDE_HERE_OPEN_BROWSER", has_graphical_browser())
     dry_run ??= get_bool_env_var("CLAUDE_HERE_DRY_RUN", False)
 
-    prompt, attachment = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=get_verbosity()*2)
+    (prompt=, attachment=) = generate_prompt(ALL_DEBUG_CONTEXT, max_context_items=get_verbosity()*2)
     if dry_run:
         print(prompt)
         if attachment:
