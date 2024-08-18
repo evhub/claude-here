@@ -1,6 +1,10 @@
 import os
 
-from claude_here.util import in_stdlib
+from claude_here.util import (
+    DEFAULT_VERBOSITY,
+    get_verbosity,
+    in_stdlib,
+)
 
 
 # META PROMPT:
@@ -12,32 +16,32 @@ from claude_here.util import in_stdlib
 
 BASE_PROMPT = """Your task is to follow the attached instructions, which should involve analyzing the attached Python code, breakpoint contexts, and/or unhandled exceptions to identify issues and provide helpful debugging suggestions. Remember to be thorough in your analysis, clear in your explanations, helpful in your suggestions, and to use Markdown to format your response."""
 
-POSTAMBLE = """Make sure to carefully examine the above source code, breakpoint contexts, and/or unhandled exceptions. Your goal is to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
+POSTAMBLE = """Make sure to carefully examine the above source code, breakpoint contexts, and/or unhandled exceptions. Try to identify the root cause of any errors or issues and suggest solutions to fix them. Follow these steps:
 
 1. Analyze the source code:
-   - Look for syntax errors, logical errors, or potential issues in the code structure.
-   - Pay attention to common Python pitfalls.
+- Look for syntax errors, logical errors, or potential issues in the code structure.
+- Pay attention to common Python pitfalls.
 
 2. Examine the breakpoint contexts and/or unhandled exceptions provided:
-   - For each context, note the filename, function, and code context where the error occurred or breakpoint was reached.
-   - If it's an exception, carefully review the traceback to understand the error type and message.
-   - If it's a breakpoint, analyze the local and global variables to identify any unexpected values or states.
+- For each context, note the filename, function, and code context where the error occurred or breakpoint was reached.
+- If it's an exception, carefully review the traceback to understand the error type and message.
+- If it's a breakpoint, analyze the local and global variables to identify any unexpected values or states.
 
 3. Identify the root cause:
-   - Cross-reference the provided context with the source code to pinpoint the exact location of the issue.
-   - Determine if the error is caused by the code itself or if it's related to external factors (e.g., missing dependencies, environment issues).
+- Cross-reference the provided context with the source code to pinpoint the exact location of the issue.
+- Determine if the error is caused by the code itself or if it's related to external factors (e.g., missing dependencies, environment issues).
 
 4. Develop debugging suggestions:
-   - Propose clear and concise solutions to fix any identified issues.
-   - If applicable, suggest alternative approaches or best practices to improve the code.
-   - Provide explanations for your suggestions to help the user understand the reasoning behind them.
-   - If there is anything you're not sure you understand from the provided context, you can ask the user for more information, but you should still give your best attempt at debugging given only the context provided.
+- Propose clear and concise solutions to fix any identified issues.
+- If applicable, suggest alternative approaches or best practices to improve the code.
+- Provide explanations for your suggestions to help the user understand the reasoning behind them.
+- If there is anything you're not sure you understand from the provided context, you can ask the user for more information, but you should still give your best attempt at debugging given only the context provided.
 
 5. Present your findings and suggestions:
-   - Summarize the identified issues and their locations in the code.
-   - List your debugging suggestions in a clear and organized manner.
-   - If relevant, include small code snippets to illustrate your suggestions.
-   - Format your response using Markdown."""
+- Summarize the identified issues and their locations in the code.
+- List your debugging suggestions in a clear and organized manner.
+- If relevant, include small code snippets to illustrate your suggestions.
+- Format your response using Markdown."""
 
 README_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "README.md")
 
@@ -66,14 +70,54 @@ case def assemble_prompt:
         f"\n```python\n{assemble_prompt(code)}\n```\n"
 
 
+def trim_source_code(source_code, relevant_line_numbers):
+    """Trim the given source code down if necessary."""
+    verbosity = get_verbosity()
+
+    if not relevant_line_numbers:
+        relevant_line_numbers = [verbosity * 20]
+
+    if len(source_code) < verbosity * 1500:
+        return source_code
+
+    source_lines = source_code.splitlines() |> list
+
+    if len(source_lines) < verbosity * 30:
+        return source_code
+
+    start_lineno = max(
+        min(relevant_line_numbers) - verbosity * 10,
+        1,
+    )
+    stop_lineno = min(
+        max(relevant_line_numbers) + verbosity * 10,
+        len(source_lines),
+    )
+
+    remainder_truncated_msg = ["<remainder truncated>"] if stop_lineno < len(source_lines) else []
+    if start_lineno <= verbosity * 10:
+        return "\n".join(source_lines[:stop_lineno] + remainder_truncated_msg)
+    else:
+        return "\n".join(
+            source_lines[:verbosity * 10]
+            + ["<middle truncated>"]
+            + source_lines[start_lineno - 1 : stop_lineno]
+            + remainder_truncated_msg
+        )
+
+
 def generate_prompt(all_debug_context, max_context_items):
     """Generate a full prompt and attachment for Claude using the given debug context."""
-    prompt_cmpts = ["""You are being called by the `claude_here` debugging library, which the user is using to ask you for debugging help. To help you understand the context of how `claude_here` works, here is the full `claude_here` README:"""]
-    # The most important bits are that any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help. It is expected that `claude_here` will be imported and not used.
-    with open(README_FILE, "r") as readme_file:
-        prompt_cmpts += [{"claude_here_readme.md": readme_file.read()}]
+    verbosity = get_verbosity()
 
-    prompt_cmpts += ["""Your goal is to assist the user in resolving their Python code issues effectively. Here is the information that you will be working with:"""]
+    prompt_cmpts = ["""The assistant is being called by the `claude_here` debugging library, which the user is using to ask you for debugging help."""]
+    if verbosity >= DEFAULT_VERBOSITY:
+        prompt_cmpts += ["""To help you understand the context of how `claude_here` works, here is the full `claude_here` README:"""]
+        # The most important bits are that any cases where you see `import claude_here` or `breakpoint()` are the user asking you for help. It is expected that `claude_here` will be imported and not used.
+        with open(README_FILE, "r") as readme_file:
+            prompt_cmpts += [{"claude_here_readme.md": readme_file.read()}]
+
+    prompt_cmpts += ["""The assistant's goal is to assist the user in resolving their Python code issues effectively. Here is the information that you will be working with:"""]
 
     for filepath, debug_contexts in all_debug_context.items():
         coconut_filepath = os.path.splitext(filepath)[0] + ".coco"
@@ -86,10 +130,13 @@ def generate_prompt(all_debug_context, max_context_items):
         if os.path.isfile(filepath) and not in_stdlib(filepath):
             with open(filepath, "r") as fobj:
                 source_code = fobj.read()
-            file_prompt_cmpts += [
-                {"source_code": source_code},
-            ]
             seen_code.add(source_code)
+            file_prompt_cmpts += [
+                {"source_code": trim_source_code(
+                    source_code,
+                    relevant_line_numbers=debug_contexts |> map$(.lineno) |> filter$(. is not None) |> tuple,
+                )},
+            ]
 
         for ctx in debug_contexts$[-max_context_items:]:
             info_dict = {}
@@ -110,7 +157,8 @@ def generate_prompt(all_debug_context, max_context_items):
 
         prompt_cmpts += [{filename: file_prompt_cmpts |> SeparatedBy$("\n\n")}]
 
-    prompt_cmpts += [POSTAMBLE]
+    if verbosity >= DEFAULT_VERBOSITY//2:
+        prompt_cmpts += [POSTAMBLE]
 
     attachment = assemble_prompt(prompt_cmpts |> SeparatedBy$("\n\n"))
     return (prompt=BASE_PROMPT, attachment=attachment)

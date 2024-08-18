@@ -10,9 +10,12 @@ BASE_HOOKS = {
 }
 
 
-def breakpointhook(just_gather_info=False, base_debugger=None, **kwargs):
+def breakpointhook(msg=None, just_gather_info=False, base_debugger=None, **kwargs):
     """Claude breakpoint handler."""
-    collect_stack_info(stack_level=2)
+    extra_info = {}
+    if msg is not None:
+        extra_info["user_message"] = msg
+    collect_stack_info(stack_level=2, extra_info=extra_info)
     if not just_gather_info:
         launch_claude(**kwargs)
         (base_debugger ?? BASE_HOOKS["breakpointhook"])()

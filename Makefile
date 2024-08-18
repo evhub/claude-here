@@ -14,19 +14,20 @@ install: build
 force-install: force-build
 	python -m pip install -Ue .
 
-.PHONY: setup
-setup:
-	python -m pip install -U pip setuptools wheel pytest coconut-develop[watch]
+.PHONY: init
+init:
+	python -m pip install -U coconut-develop[watch]
 
-.PHONY: unclean-build
-unclean-build: setup
-	coconut claude_here --target 3.9 --no-tco --strict
+.PHONY: setup
+setup: clean
+	python -m pip install -U pip setuptools wheel pytest
 
 .PHONY: build
-build: clean unclean-build
+build: setup
+	coconut claude_here --target 3.9 --no-tco --strict
 
 .PHONY: force-build
-force-build: setup clean
+force-build: setup
 	coconut claude_here --force --target 3.9 --no-tco --strict
 
 .PHONY: package
@@ -40,8 +41,6 @@ upload: package
 
 .PHONY: clean
 clean:
-	rm -rf ./dist ./build
+	rm -rf ./dist ./build ./claude_here/__coconut_cache__
 	-find . -name "*.pyc" -delete
-	-C:/GnuWin32/bin/find.exe . -name "*.pyc" -delete
 	-find . -name "__pycache__" -delete
-	-C:/GnuWin32/bin/find.exe . -name "__pycache__" -delete

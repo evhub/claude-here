@@ -10,12 +10,14 @@ from claude_here.prompter import generate_prompt
 
 TEXT_BASED_BROWSERS = {"www-browser", "w3m", "elinks", "lynx"}
 
+WEBBROWSER_ERRORS = webbrowser.Error, ValueError
+
 
 def has_graphical_browser():
     """Determine if the environment has a graphical browser."""
     try:
         return webbrowser.get().name not in TEXT_BASED_BROWSERS
-    except webbrowser.Error, ValueError:
+    except WEBBROWSER_ERRORS:
         return False
 
 
@@ -39,7 +41,7 @@ def launch_claude(project_id=None, open_browser=None, dry_run=None):
         if open_browser:
             try:
                 webbrowser.open(url)
-            except webbrowser.Error, ValueError:
+            except WEBBROWSER_ERRORS:
                 traceback.print_exc()
                 open_browser = False
         if not open_browser:
