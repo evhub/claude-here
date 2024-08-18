@@ -120,10 +120,15 @@ def collect_frame_info(debug_context_name, frame, extra_info=None):
 IGNORE_PACKAGES = {"claude_here", "builtins", "importlib"}
 
 
+def get_frame_package(frame):
+    """Get the package name for the given frame."""
+    return frame.f_globals.get("__package__") or frame.f_globals.get("__name__")
+
+
 def filter_traceback(orig_tb):
     """Filter out traceback frames from claude_here."""
     new_tb_top = orig_tb
-    while new_tb_top is not None and new_tb_top.tb_frame.f_globals.get("__package__") in IGNORE_PACKAGES:
+    while new_tb_top is not None and get_frame_package(new_tb_top.tb_frame) in IGNORE_PACKAGES:
         new_tb_top = new_tb_top.tb_next
 
     if new_tb_top is not None:
@@ -131,7 +136,7 @@ def filter_traceback(orig_tb):
         tb_cursor = tb_cursor_plus_1.tb_next
         while tb_cursor is not None:
             tb_cursor_minus_1 = tb_cursor.tb_next
-            if tb_cursor.tb_frame.f_globals.get("__package__") in IGNORE_PACKAGES:
+            if get_frame_package(tb_cursor.tb_frame) in IGNORE_PACKAGES:
                 tb_cursor_plus_1.tb_next = tb_cursor_minus_1
                 tb_cursor_plus_1, tb_cursor = (
                     tb_cursor_plus_1,
